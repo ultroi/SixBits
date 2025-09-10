@@ -1,0 +1,14 @@
+{
+  "name": "zariya",
+  "version": "1.0.0",
+  "description": "Zariya Career Counseling Platform",
+  "scripts": {
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm run dev",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
