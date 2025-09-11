@@ -84,3 +84,46 @@ body {
     @apply text-base;
   }
 }
+
+/* Enhanced Chat Interface Styles */
+.message-bubble {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.message-bubble:hover {
+  @apply transform scale-[1.01];
+}
+
+.message-actions {
+  @apply opacity-0 group-hover:opacity-100 transition-opacity duration-200;
+}
+
+.typing-indicator {
+  @apply animate-pulse;
+}
+
+.quick-reply-btn {
+  @apply transition-all duration-200 ease-in-out hover:scale-105 active:scale-95;
+}
+
+.search-highlight {
+  @apply bg-yellow-200 text-yellow-900 px-1 rounded;
+}
+
+/* Smooth scrolling for chat */
+.chat-container {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded hover:bg-gray-400;
+}

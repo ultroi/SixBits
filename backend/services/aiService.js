@@ -1,15 +1,16 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const OpenAI = require('openai');
 const Chat = require('../models/Chat');
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-// Initialize DeepSeek API as fallback
-const deepseek = new OpenAI({
-  apiKey: 'sk-593a99a3ddc84fed8773ec9e601b2ad1',
-  baseURL: 'https://api.deepseek.com',
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash",
+  generationConfig: {
+    maxOutputTokens: 800, // Reduced from 1042 to help prevent timeouts
+    temperature: 0.7, // Control randomness
+    topK: 40, // Consider top 40 tokens
+    topP: 0.95, // Nucleus sampling
+  }
 });
 
 // Context for the AI to act as a career counselor
@@ -82,34 +83,87 @@ const formatChatHistory = (messages) => {
   }));
 };
 
-// Retry function with exponential backoff for 503 errors
-const retryWithBackoff = async (fn, retries = 3, delay = 1000) => {
-  try {
-    return await fn();
-  } catch (error) {
-    if (retries > 0 && error.message.includes('503')) {
-      console.log(`Retrying due to 503 error. Retries left: ${retries}`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return retryWithBackoff(fn, retries - 1, delay * 2);
-    } else {
-      throw error;
-    }
-  }
+
+
+
+
+// Retry/backoff configuration (can be tuned via env)
+const MAX_RETRIES = process.env.AI_MAX_RETRIES ? parseInt(process.env.AI_MAX_RETRIES, 10) : 3;
+const BASE_DELAY_MS = process.env.AI_BASE_DELAY_MS ? parseInt(process.env.AI_BASE_DELAY_MS, 10) : 500;
+const MAX_DELAY_MS = process.env.AI_MAX_DELAY_MS ? parseInt(process.env.AI_MAX_DELAY_MS, 10) : 10000;
+const REQUEST_TIMEOUT_MS = process.env.AI_REQUEST_TIMEOUT_MS ? parseInt(process.env.AI_REQUEST_TIMEOUT_MS, 10) : 60000; // default timeout: 60 seconds (can be overridden via env)
+
+// Determine if an error is retryable (503/5xx/429/service unavailable/overloaded)
+const isRetryableError = (err) => {
+  if (!err) return false;
+  const msg = (err.message || '').toString();
+  const code = err.code || err.status || (err.response && err.response.status);
+
+  if (code === 429) return true; // rate limit
+  if (code && Number(code) >= 500 && Number(code) < 600) return true; // server errors
+  if (/503|service unavailable|overloaded|temporar/i.test(msg)) return true;
+  return false;
 };
 
-// Fallback to DeepSeek API
-const callDeepSeek = async (messages) => {
-  try {
-    const response = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
-      messages: messages,
-      max_tokens: 1000,
-    });
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error('DeepSeek API error:', error);
-    throw error;
+// Sleep helper
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Call a function with a timeout. If it times out we reject with a specific error.
+const callWithTimeout = (fnPromise, timeoutMs) => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const e = new Error(`Request timed out after ${timeoutMs}ms`);
+      e.code = 'ETIMEDOUT';
+      reject(e);
+    }, timeoutMs);
+
+    fnPromise()
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+};
+
+// Retry function with exponential backoff and jitter
+const retryWithBackoff = async (fn, retries = MAX_RETRIES, baseDelay = BASE_DELAY_MS) => {
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt <= retries) {
+    try {
+      // Wrap the actual call with a timeout guard
+      const result = await callWithTimeout(fn, REQUEST_TIMEOUT_MS);
+      if (attempt > 0) console.log(`Succeeded after ${attempt} retry(ies)`);
+      return result;
+    } catch (error) {
+      lastError = error;
+
+      // If this error is not retryable, break early
+      if (!isRetryableError(error)) {
+        // Non-retryable failure
+        throw error;
+      }
+
+      // If we've exhausted attempts, break and throw
+      if (attempt === retries) break;
+
+      const expDelay = Math.min(MAX_DELAY_MS, baseDelay * Math.pow(2, attempt));
+      const jitter = Math.floor(Math.random() * 1000); // up to 1s jitter
+      const waitMs = expDelay + jitter;
+
+      console.log(`Retrying AI request (attempt ${attempt + 1}/${retries}) due to retryable error: ${error.message || error}. Waiting ${waitMs}ms before next attempt.`);
+      await sleep(waitMs);
+      attempt += 1;
+    }
   }
+
+  // Exhausted all retries
+  throw lastError || new Error('Unknown error during retry attempts');
 };
 
 // Process user message and get AI response
@@ -164,42 +218,24 @@ ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarM
     
     // Check if this is a new chat or continuing conversation
     let response;
-    let botResponse;
-    try {
-      if (chat.messages.length <= 1) {
-        // Start new chat with system context
-        const chatSession = model.startChat({
-          history: [{ role: 'model', parts: [{ text: personalizedContext }] }],
-        });
-        response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
-      } else {
-        // Continue existing chat
-        const chatSession = model.startChat({
-          history: [
-            { role: 'model', parts: [{ text: personalizedContext }] },
-            ...formattedHistory.slice(0, -1) // Exclude the latest user message
-          ],
-        });
-        response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
-      }
-      botResponse = response.response.text();
-    } catch (error) {
-      if (error.message.includes('503')) {
-        console.log('Gemini overloaded, falling back to DeepSeek');
-        // Fallback to DeepSeek
-        const deepseekMessages = [
-          { role: 'system', content: personalizedContext },
-          ...formattedHistory.slice(0, -1).map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'assistant',
-            content: msg.parts[0].text
-          })),
-          { role: 'user', content: userMessage }
-        ];
-        botResponse = await callDeepSeek(deepseekMessages);
-      } else {
-        throw error;
-      }
+    if (chat.messages.length <= 1) {
+      // Start new chat with system context
+      const chatSession = model.startChat({
+        history: [{ role: 'model', parts: [{ text: personalizedContext }] }],
+      });
+      response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
+    } else {
+      // Continue existing chat
+      const chatSession = model.startChat({
+        history: [
+          { role: 'model', parts: [{ text: personalizedContext }] },
+          ...formattedHistory.slice(0, -1) // Exclude the latest user message
+        ],
+      });
+      response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
     }
+    
+    const botResponse = response.response.text();
     
     // Add bot response to chat history
     chat.messages.push({
@@ -216,7 +252,30 @@ ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarM
     
     return botResponse;
   } catch (error) {
-    console.error('AI processing error:', error);
-    throw error;
+    // Centralized error logging
+    console.error('AI processing error:', error && (error.stack || error.message || error));
+
+    // Prepare an error to throw with an appropriate HTTP status
+    const errMsg = (error && (error.message || '')).toString().toLowerCase();
+
+    const outErr = new Error();
+
+    if (error && error.code === 'ETIMEDOUT') {
+      outErr.message = "AI request timed out. Please try again later or simplify your query.";
+      outErr.status = 504; // Gateway Timeout
+    } else if (errMsg.includes('quota')) {
+      outErr.message = "AI usage quota reached. Please try again later.";
+      outErr.status = 429; // Too Many Requests
+    } else if (errMsg.includes('503') || /service unavailable|overload|overloaded|temporar/i.test(errMsg) || (error && (error.code === 503 || error.status === 503))) {
+      outErr.message = "AI service is currently unavailable. Please try again in a few minutes.";
+      outErr.status = 503; // Service Unavailable
+    } else {
+      outErr.message = "AI service error. Please try again later.";
+      outErr.status = 500;
+    }
+
+    // Attach original error for debugging (not sent to clients)
+    outErr.original = error;
+    throw outErr;
   }
 };

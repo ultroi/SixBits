@@ -25,6 +25,43 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters']
+    },
+    age: {
+      type: Number,
+      min: [10, 'Age must be at least 10'],
+      max: [100, 'Age must be at most 100']
+    },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other']
+    },
+    class: {
+      type: String,
+      enum: ['10th', '11th', '12th', 'Graduate', 'Post-Graduate', 'Other']
+    },
+    academicInterests: [{
+      type: String,
+      enum: ['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business', 'Other']
+    }],
+    quizResults: [{
+      quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
+      score: Number,
+      interests: [String],
+      strengths: [String],
+      personalityTraits: [String],
+      suggestedStreams: [String],
+      dateTaken: { type: Date, default: Date.now }
+    }],
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0]
+      }
     }
   },
   {

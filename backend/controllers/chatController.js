@@ -13,12 +13,17 @@ exports.processMessage = async (req, res) => {
     
     // Process the message using AI service
     const aiResponse = await aiService.processMessage(user, message);
-    
+
     // Return the AI response
     res.status(200).json({ message: aiResponse });
   } catch (error) {
-    console.error('Chat processing error:', error);
-    res.status(500).json({ message: 'Failed to process your message' });
+    console.error('Chat processing error:', error && (error.stack || error.message || error));
+
+    // If the service threw a structured error with status, use it
+    const status = (error && error.status) ? error.status : 500;
+    const message = (error && error.message) ? error.message : 'Failed to process your message';
+
+    res.status(status).json({ message });
   }
 };
 

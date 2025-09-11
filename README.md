@@ -1,108 +1,249 @@
 # Zariya - AI Career Counseling Platform
 
-Zariya is an AI-powered career counseling platform that provides personalized career guidance and advice using Google's Gemini 1.5 Flash model.
+A comprehensive career guidance platform that helps students make informed decisions about their education and career paths through AI-powered recommendations, aptitude assessments, and personalized guidance.
 
 ## Features
 
-- Interactive landing page with modern design
-- User authentication (signup and login)
-- ChatGPT-like interface for career counseling
-- AI-powered responses using Gemini 1.5 Flash
-- Memory retention for consistent conversations
-- Responsive design for all devices
+### 🎯 Aptitude & Interest-Based Course Suggestion
+- Comprehensive quiz assessing interests, strengths, and personality traits
+- AI-driven course recommendations based on quiz results
+- Career path comparisons and suggestions
+
+### 📊 Course-to-Career Path Mapping
+- Visual charts showing degree-to-career mappings
+- Industry insights and job market trends
+- Salary information and growth projections
+- Required skills and certifications
+
+### 🏛️ Nearby Government Colleges Directory
+- Location-based college search
+- Detailed college information including programs, cut-offs, facilities
+- Contact information and application links
+- Facility filters (hostel, library, labs, etc.)
+
+### 📅 Timeline Tracker
+- Personalized timeline management
+- Important dates tracking (admissions, exams, scholarships)
+- Notification system for upcoming deadlines
+- Progress tracking and reminders
+
+### 🎨 Customization and Personalization
+- User profile creation with age, gender, class, interests
+- AI-driven recommendations based on profile
+- Personalized study materials and career suggestions
+- Adaptive learning paths
+
+### 💬 AI-Powered Career Counseling
+- Interactive chat interface with Gemini AI
+- Context-aware conversations using user profile
+- Memory retention for consistent guidance
+- Personalized recommendations integration
 
 ## Tech Stack
 
-### Frontend
-- React.js
-- Tailwind CSS
-- React Router DOM
-- Axios for API requests
-- React Toastify for notifications
-- React Icons
-
 ### Backend
-- Node.js
-- Express.js
-- MongoDB with Mongoose
-- JWT Authentication
-- Google Generative AI (Gemini 1.5 Flash)
+- **Node.js** with Express.js
+- **MongoDB** with Mongoose
+- **JWT** for authentication
+- **bcryptjs** for password hashing
+- **Google Generative AI** for AI responses
 
-## Getting Started
+### Frontend
+- **React** with React Router
+- **Tailwind CSS** for styling
+- **Lucide React** for icons
+- **Axios** for API calls
+- **React Toastify** for notifications
 
-### Prerequisites
+## Prerequisites
 
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
+- Node.js (v16 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn package manager
 - Google AI API key for Gemini
 
-### ESLint Warnings
+## Installation
 
-If you encounter ESLint warnings about anchor tags (`<a href="#">`), you can fix them by:
-
-1. Replacing anchor tags with buttons:
-   ```jsx
-   // Instead of
-   <a href="#" className="...">Text</a>
-   
-   // Use
-   <button type="button" className="...">Text</button>
-   ```
-
-2. Or add proper routes/URLs to your anchor tags:
-   ```jsx
-   <Link to="/about" className="...">About</Link>
-   ```
-
-3. Or disable specific ESLint rules in the component:
-   ```jsx
-   // eslint-disable-next-line jsx-a11y/anchor-is-valid
-   <a href="#" className="...">Text</a>
-   ```
-
-### Installation
-
-1. Clone the repository
-```
-git clone <repository-url>
-cd zariya
+### 1. Clone the Repository
+```bash
+git clone https://github.com/ultroi/SixBits.git
+cd SixBits
 ```
 
-2. Install frontend dependencies
+### 2. Backend Setup
+
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env
+
+# Update .env with your configuration
+MONGODB_URI=mongodb://localhost:27017/Zariya
+JWT_SECRET=your_jwt_secret_here
+GOOGLE_AI_API_KEY=your_google_ai_api_key
+PORT=5000
 ```
-cd frontend
+
+### 3. Frontend Setup
+
+```bash
+cd ../frontend
+
+# Install dependencies
 npm install
 ```
 
-3. Install backend dependencies
-```
+### 4. Database Setup
+
+```bash
 cd ../backend
-npm install
+
+# Seed the database with sample data
+npm run seed
 ```
 
-4. Configure environment variables
-   - Create `.env` file in the backend folder
-   - Add the following variables:
-   ```
-   PORT=5000
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret
-   GEMINI_API_KEY=your_gemini_api_key
-   ```
+## Running the Application
 
-5. Run the application
-   - Start the backend
-   ```
-   cd backend
-   npm run dev
-   ```
-   - Start the frontend in a new terminal
-   ```
-   cd frontend
-   npm start
-   ```
+### Development Mode
 
-6. Access the application at `http://localhost:3000`
+#### Backend
+```bash
+cd backend
+npm run dev
+```
+Server will run on http://localhost:5000
+
+#### Frontend
+```bash
+cd frontend
+npm start
+```
+Application will run on http://localhost:3000
+
+### Production Mode
+
+#### Backend
+```bash
+cd backend
+npm start
+```
+
+#### Frontend
+```bash
+cd frontend
+npm run build
+# Serve the build folder using any static server
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration with profile
+- `POST /api/auth/login` - User login
+
+### Quiz
+- `GET /api/quiz` - Get all quizzes
+- `GET /api/quiz/:id` - Get quiz by ID
+- `POST /api/quiz/submit` - Submit quiz answers
+
+### Courses
+- `GET /api/courses` - Get courses (with filters)
+- `GET /api/courses/:id` - Get course by ID
+- `GET /api/courses/:id/career-paths` - Get career paths for course
+
+### Colleges
+- `GET /api/colleges` - Get colleges (with filters)
+- `GET /api/colleges/location` - Get colleges by location
+- `GET /api/colleges/:id` - Get college by ID
+
+### Timeline
+- `GET /api/timeline/:userId` - Get user timeline
+- `POST /api/timeline` - Create timeline entry
+- `PUT /api/timeline/:id` - Update timeline entry
+- `DELETE /api/timeline/:id` - Delete timeline entry
+- `GET /api/timeline/:userId/upcoming` - Get upcoming events
+
+### Chat
+- `POST /api/chat/message` - Send message to AI
+
+## User Flow
+
+1. **Landing Page** → Introduction to Zariya platform
+2. **Signup/Login** → Create account with profile information
+3. **Dashboard** → Central hub with personalized recommendations
+4. **Aptitude Quiz** → Take comprehensive assessment
+5. **Course Explorer** → Browse courses with career mappings
+6. **College Directory** → Find nearby government colleges
+7. **Timeline Manager** → Track important dates and deadlines
+8. **AI Chat** → Get personalized career guidance
+
+## Database Models
+
+### User
+- Personal information (name, email, age, gender, class)
+- Academic interests
+- Quiz results history
+- Location coordinates
+
+### Quiz
+- Questions with multiple choice options
+- Categories (interest, strength, personality)
+- Scoring system
+
+### Course
+- Degree and stream information
+- Career paths with salary data
+- Entrance exams and eligibility
+- Higher education options
+- Entrepreneurship opportunities
+
+### College
+- Location and contact information
+- Programs offered with cut-offs
+- Facilities and ratings
+- Government/Private classification
+
+### Timeline
+- User-specific events
+- Types (exam, admission, scholarship, etc.)
+- Priority levels and completion status
+- Reminder system
+
+## Features in Detail
+
+### Aptitude Assessment
+- 9 comprehensive questions across 3 categories
+- Visual results with percentage breakdowns
+- AI-powered course recommendations
+- Results stored in user profile
+
+### Course Recommendations
+- Filter by stream, degree, duration
+- Career path visualization with salary data
+- Required skills and growth projections
+- Entrance exam information
+
+### College Search
+- Location-based search (within 50km radius)
+- Facility filters (hostel, library, labs, internet, sports)
+- Program-specific search
+- Direct application links and contact information
+
+### Timeline Management
+- Automated event creation from quiz/course selections
+- Priority-based notifications (high/medium/low)
+- Progress tracking and completion status
+- Custom event addition with date reminders
+
+### AI Personalization
+- Context-aware conversations using user profile
+- Quiz result integration for recommendations
+- Personalized study plans and career advice
+- Memory retention across sessions
 
 ## Project Structure
 
@@ -113,7 +254,7 @@ frontend/
   ├── src/
   │   ├── components/    # Reusable UI components
   │   ├── context/       # React context for state management
-  │   ├── pages/         # Page components
+  │   ├── pages/         # Page components (Dashboard, Quiz, Courses, etc.)
   │   ├── services/      # API service functions
   │   ├── App.js         # Main application component
   │   └── index.js       # Application entry point
@@ -129,24 +270,26 @@ backend/
   ├── routes/            # API routes
   ├── services/          # Business logic services
   ├── server.js          # Server entry point
+  ├── seed.js            # Database seeding script
   └── package.json
 ```
 
-## API Endpoints
+## Contributing
 
-### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user
-
-### Chat
-- `POST /api/chat` - Send a message and get AI response
-- `GET /api/chat/history` - Get user's chat history
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
+
+## Support
+
+For support or questions, please contact the development team or create an issue in the repository.
 
 ---
 
-Created with ❤️ by [Your Name]
+**Made with ❤️ for career growth**

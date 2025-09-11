@@ -10,6 +10,10 @@ dotenv.config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
+const quizRoutes = require('./routes/quiz');
+const collegeRoutes = require('./routes/college');
+const courseRoutes = require('./routes/course');
+const timelineRoutes = require('./routes/timeline');
 
 // Initialize app
 const app = express();
@@ -23,6 +27,10 @@ app.use(morgan('dev'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/colleges', collegeRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/timeline', timelineRoutes);
 
 // Default route
 app.get('/', (req, res) => {
