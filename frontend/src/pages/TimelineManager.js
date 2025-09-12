@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
   Clock,
@@ -11,7 +12,8 @@ import {
   Search,
   Filter,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles
 } from 'lucide-react';
 
 const TimelineManager = () => {
@@ -26,6 +28,7 @@ const TimelineManager = () => {
     status: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate();
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -220,9 +223,20 @@ const TimelineManager = () => {
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Timeline Manager</h1>
-              <p className="text-gray-600 mt-1">Track important dates and stay on top of deadlines</p>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Timeline Manager</h1>
+                <p className="text-gray-600 mt-1">Track important dates and stay on top of deadlines</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">

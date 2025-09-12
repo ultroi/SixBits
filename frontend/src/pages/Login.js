@@ -55,7 +55,7 @@ const Login = () => {
         email: formData.email,
         password: formData.password
       });
-      navigate('/chat');
+      navigate('/dashboard');
     } catch (error) {
       // Error handling is done in the AuthContext
       setLoading(false);
@@ -64,6 +64,16 @@ const Login = () => {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-indigo-50 via-white to-indigo-50'} flex flex-col justify-center py-12 sm:px-6 lg:px-8`}>
+      {/* Zariya Logo */}
+      <div className="absolute top-4 left-4">
+        <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+        </Link>
+      </div>
+
       {/* Dark mode toggle */}
       <div className="absolute top-4 right-4">
         <button
@@ -75,14 +85,6 @@ const Login = () => {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center mb-8">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-            <h2 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h2>
-          </div>
-        </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Sign in to your account
         </h2>

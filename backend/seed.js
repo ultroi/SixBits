@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const XLSX = require('xlsx');
 const Quiz = require('./models/Quiz');
 const Course = require('./models/Course');
 const College = require('./models/College');
@@ -128,8 +129,8 @@ const sampleCourses = [
     ]
   },
   {
-    name: 'Bachelor of Science (B.Sc)',
-    degree: 'B.Sc',
+    name: 'Bachelor of Science (B.Sc.)',
+    degree: 'B.Sc.',
     stream: 'Science',
     duration: 3,
     description: 'Foundation in scientific principles with specialization options.',
@@ -176,8 +177,8 @@ const sampleCourses = [
     ]
   },
   {
-    name: 'Bachelor of Commerce (B.Com)',
-    degree: 'B.Com',
+    name: 'Bachelor of Commerce (B.Com.)',
+    degree: 'B.Com.',
     stream: 'Commerce',
     duration: 3,
     description: 'Comprehensive business education covering finance, accounting, and management.',
@@ -273,131 +274,50 @@ const sampleCourses = [
   }
 ];
 
-const sampleColleges = [
-  {
-    name: 'Delhi University',
-    type: 'Government',
-    location: {
-      address: 'New Delhi, Delhi',
-      city: 'Delhi',
-      state: 'Delhi',
-      pincode: '110007',
-      coordinates: { lat: 28.6139, lng: 77.2090 }
-    },
-    programs: [
-      {
-        name: 'B.A. Economics',
-        degree: 'B.A.',
-        duration: 3,
-        cutOff: 95,
-        eligibility: '12th pass with 85%',
-        medium: 'English',
-        fees: 15000
+const sampleColleges = (() => {
+  const workbook = XLSX.readFile('College-Affiliated College.xlsx');
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rawData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+  
+  // Skip first two rows (date and headers)
+  const data = rawData.slice(2);
+  
+  return data.filter(row => row[1] && row[1] !== 'Name').map(row => {
+    const management = row[8] || '';
+    let type = 'Private';
+    if (management.toLowerCase().includes('government') || 
+        management.toLowerCase().includes('state') || 
+        management.toLowerCase().includes('central') || 
+        management.toLowerCase().includes('local body') ||
+        management.toLowerCase().includes('university')) {
+      type = 'Government';
+    }
+    return {
+      name: row[1], // Name
+      type: type,
+      location: {
+        city: row[3], // District
+        state: row[2], // State
+        address: `${row[1]}, ${row[3]}, ${row[2]}`,
+        pincode: '',
+        coordinates: { lat: 0, lng: 0 }
       },
-      {
-        name: 'B.Sc Mathematics',
-        degree: 'B.Sc',
-        duration: 3,
-        cutOff: 92,
-        eligibility: '12th pass with PCM',
-        medium: 'English',
-        fees: 18000
-      }
-    ],
-    facilities: {
-      hostel: true,
-      library: true,
-      lab: true,
-      internet: true,
-      sports: true
-    },
-    contact: {
-      phone: '+91-1234567890',
-      email: 'info@du.ac.in',
-      website: 'https://www.du.ac.in'
-    },
-    rating: 4.5
-  },
-  {
-    name: 'Jawaharlal Nehru University',
-    type: 'Government',
-    location: {
-      address: 'New Delhi, Delhi',
-      city: 'Delhi',
-      state: 'Delhi',
-      pincode: '110067',
-      coordinates: { lat: 28.5402, lng: 77.1662 }
-    },
-    programs: [
-      {
-        name: 'B.A. International Relations',
-        degree: 'B.A.',
-        duration: 3,
-        cutOff: 88,
-        eligibility: '12th pass',
-        medium: 'English',
-        fees: 12000
-      }
-    ],
-    facilities: {
-      hostel: true,
-      library: true,
-      lab: false,
-      internet: true,
-      sports: true
-    },
-    contact: {
-      phone: '+91-9876543210',
-      email: 'admissions@jnu.ac.in',
-      website: 'https://www.jnu.ac.in'
-    },
-    rating: 4.3
-  },
-  {
-    name: 'Indian Institute of Technology Delhi',
-    type: 'Government',
-    location: {
-      address: 'Hauz Khas, Delhi',
-      city: 'Delhi',
-      state: 'Delhi',
-      pincode: '110016',
-      coordinates: { lat: 28.5448, lng: 77.1926 }
-    },
-    programs: [
-      {
-        name: 'B.Tech Computer Science',
-        degree: 'B.Tech',
-        duration: 4,
-        cutOff: 98,
-        eligibility: 'JEE Advanced qualified',
-        medium: 'English',
-        fees: 250000
+      programs: [],
+      facilities: {
+        hostel: false,
+        library: false,
+        lab: false,
+        internet: false,
+        sports: false
       },
-      {
-        name: 'B.Tech Mechanical',
-        degree: 'B.Tech',
-        duration: 4,
-        cutOff: 95,
-        eligibility: 'JEE Advanced qualified',
-        medium: 'English',
-        fees: 250000
-      }
-    ],
-    facilities: {
-      hostel: true,
-      library: true,
-      lab: true,
-      internet: true,
-      sports: true
-    },
-    contact: {
-      phone: '+91-1126591502',
-      email: 'admission@iitd.ac.in',
-      website: 'https://www.iitd.ac.in'
-    },
-    rating: 4.8
-  }
-];
+      contact: {
+        website: row[4] || ''
+      },
+      rating: 0
+    };
+  });
+})();
 
 async function seedDatabase() {
   try {

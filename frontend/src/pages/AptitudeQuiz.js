@@ -10,7 +10,8 @@ import {
   Brain,
   Heart,
   Star,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 
 const questions = [
@@ -121,6 +122,7 @@ const AptitudeQuiz = () => {
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState(null);
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const calculateResults = useCallback(() => {
@@ -152,11 +154,16 @@ const AptitudeQuiz = () => {
     return scores;
   }, [answers]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    setIsSubmitting(true);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
     const calculatedResults = calculateResults();
     setResults(calculatedResults);
     setShowResults(true);
     localStorage.setItem('quizResults', JSON.stringify(calculatedResults));
+    localStorage.setItem('quizCompleted', 'true');
+    setIsSubmitting(false);
   }, [calculateResults]);
 
   useEffect(() => {
@@ -205,14 +212,7 @@ const AptitudeQuiz = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </button>
+            <div className="flex justify-center items-center py-4">
               <div className="text-sm text-gray-500">Quiz Results</div>
             </div>
           </div>
@@ -322,18 +322,12 @@ const AptitudeQuiz = () => {
                 </div>
               </div>
 
-              <div className="flex justify-center space-x-4">
+              <div className="flex justify-center">
                 <button
                   onClick={() => navigate('/courses')}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
                 >
                   Explore Courses
-                </button>
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Back to Dashboard
                 </button>
               </div>
             </div>
@@ -352,13 +346,17 @@ const AptitudeQuiz = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Dashboard
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+              </button>
+            </div>
             <div className="text-sm text-gray-500">Aptitude Assessment</div>
           </div>
         </div>
@@ -399,7 +397,7 @@ const AptitudeQuiz = () => {
             </div>
 
             {/* Question */}
-            <div className="mb-8">
+            <div key={currentQuestion} className="mb-8 animate-pulse">
               <div className="flex items-center mb-4">
                 <div className="p-2 bg-indigo-100 rounded-lg mr-3">
                   {getCategoryIcon(currentQ.category)}
@@ -412,9 +410,9 @@ const AptitudeQuiz = () => {
                   <button
                     key={index}
                     onClick={() => handleAnswer(currentQ.id, option)}
-                    className={`w-full text-left p-4 rounded-lg border transition-all ${
+                    className={`w-full text-left p-4 rounded-lg border transition-all duration-200 transform hover:scale-105 ${
                       answers[currentQ.id]?.text === option.text
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-900 scale-105'
                         : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'
                     }`}
                   >
@@ -437,10 +435,20 @@ const AptitudeQuiz = () => {
               {currentQuestion === questions.length - 1 ? (
                 <button
                   onClick={handleSubmit}
-                  className="flex items-center px-4 py-2 border border-transparent rounded-lg text-white bg-indigo-600 hover:bg-indigo-700"
+                  disabled={isSubmitting}
+                  className="flex items-center px-4 py-2 border border-transparent rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Submit Quiz
-                  <CheckCircle className="w-4 h-4 ml-2" />
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      Submit Quiz
+                      <CheckCircle className="w-4 h-4 ml-2" />
+                    </>
+                  )}
                 </button>
               ) : (
                 <button

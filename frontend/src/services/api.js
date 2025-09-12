@@ -29,13 +29,13 @@ export const authService = {
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
-  
+
   // Login user
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
     return response.data;
   },
-  
+
   // Get current user
   getCurrentUser: async () => {
     const response = await api.get('/auth/me');
@@ -50,10 +50,40 @@ export const chatService = {
     const response = await api.post('/chat', { message });
     return response.data;
   },
-  
+
   // Get chat history
   getChatHistory: async () => {
     const response = await api.get('/chat/history');
+    return response.data;
+  },
+};
+
+// Quiz services
+export const quizService = {
+  // Submit quiz results
+  submitQuiz: async (quizData) => {
+    const response = await api.post('/quiz/submit', quizData);
+    return response.data;
+  },
+};
+
+// College services
+export const collegeService = {
+  // Get all colleges with filters
+  getColleges: async (params = {}) => {
+    const response = await api.get('/colleges', { params });
+    return response.data;
+  },
+
+  // Get college by ID
+  getCollegeById: async (id) => {
+    const response = await api.get(`/colleges/${id}`);
+    return response.data;
+  },
+
+  // Get colleges by location
+  getCollegesByLocation: async (lat, lng, radius = 50000) => {
+    const response = await api.get('/colleges/nearby', { params: { lat, lng, radius } });
     return response.data;
   },
 };
