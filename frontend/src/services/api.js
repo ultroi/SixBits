@@ -60,9 +60,21 @@ export const chatService = {
 
 // Quiz services
 export const quizService = {
+  // Generate personalized quiz questions
+  generatePersonalizedQuiz: async (userId) => {
+    const response = await api.get(`/quiz/generate/${userId}`);
+    return response.data;
+  },
+
   // Submit quiz results
   submitQuiz: async (quizData) => {
     const response = await api.post('/quiz/submit', quizData);
+    return response.data;
+  },
+
+  // Get user's quiz results
+  getUserQuizResults: async (userId) => {
+    const response = await api.get(`/quiz/results/${userId}`);
     return response.data;
   },
 };

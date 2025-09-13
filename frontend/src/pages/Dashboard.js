@@ -14,49 +14,146 @@ import {
   Bell,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { quizService, authService } from '../services/api';
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const { logout } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Mock user data - in real app, fetch from API
-    const mockUser = {
-      firstName: 'Akshay',
-      lastName: 'Singh',
-      age: 18,
-      gender: 'Male',
-      class: '12th',
-      academicInterests: ['Science', 'Engineering'],
-      quizResults: null
-    };
-    setUser(mockUser);
-    setQuizCompleted(localStorage.getItem('quizCompleted') === 'true');
-
-    // Mock recommendations
-    setRecommendations([
-      {
-        type: 'course',
-        title: 'B.Tech Computer Science',
-        description: 'Based on your Science interest',
-        score: 95
-      },
-      {
-        type: 'college',
-        title: 'IIT Delhi',
-        description: 'Government college, 2km away',
-        score: 92
+    const fetchUserData = async () => {
+      try {
+        
+        // Get current user data
+        const { user: currentUser } = await authService.getCurrentUser();
+        
+        // Check quiz completion status
+        if (currentUser && currentUser._id) {
+          const quizResults = await quizService.getUserQuizResults(currentUser._id);
+          const hasCompletedQuiz = quizResults.quizResults && quizResults.quizResults.length > 0;
+          setQuizCompleted(hasCompletedQuiz);
+          
+          // Generate personalized recommendations based on quiz results
+          if (hasCompletedQuiz) {
+            const latestResult = quizResults.quizResults[quizResults.quizResults.length - 1];
+            generateRecommendations(latestResult, currentUser);
+          } else {
+            // Default recommendations for new users
+            setRecommendations([
+              {
+                type: 'action',
+                title: 'Complete Aptitude Quiz',
+                description: 'Take our personalized quiz to get career recommendations',
+                score: 100,
+                action: 'Take Quiz'
+              }
+            ]);
+          }
+        }
+        
+        // Mock upcoming events (can be replaced with real data later)
+        setUpcomingEvents([
+          {
+            title: 'JEE Main Registration',
+            date: '2025-01-15',
+            type: 'exam',
+            priority: 'high'
+          },
+          {
+            title: 'Scholarship Application',
+            date: '2025-01-20',
+            type: 'scholarship',
+            priority: 'medium'
+          }
+        ]);
+        
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        // Set default state on error
+        setQuizCompleted(false);
+        setRecommendations([
+          {
+            type: 'action',
+            title: 'Complete Aptitude Quiz',
+            description: 'Take our personalized quiz to get career recommendations',
+            score: 100,
+            action: 'Take Quiz'
+          }
+        ]);
       }
-    ]);
+    };
 
+    fetchUserData();
+  }, [user]);
+
+  const generateRecommendations = (quizResult, user) => {
+    const recs = [];
+    
+    // Based on interests
+    if (quizResult.interests && quizResult.interests.length > 0) {
+      if (quizResult.interests.some(i => i.toLowerCase().includes('science'))) {
+        recs.push({
+          type: 'course',
+          title: 'B.Tech Computer Science',
+          description: 'Based on your Science interest',
+          score: 95
+        });
+      }
+      if (quizResult.interests.some(i => i.toLowerCase().includes('commerce'))) {
+        recs.push({
+          type: 'course',
+          title: 'B.Com (Hons)',
+          description: 'Based on your Commerce interest',
+          score: 90
+        });
+      }
+    }
+    
+    // Based on suggested streams
+    if (quizResult.suggestedStreams && quizResult.suggestedStreams.length > 0) {
+      quizResult.suggestedStreams.forEach(stream => {
+        if (stream === 'Science') {
+          recs.push({
+            type: 'stream',
+            title: 'Science Stream',
+            description: 'Recommended based on your quiz results',
+            score: 92
+          });
+        } else if (stream === 'Commerce') {
+          recs.push({
+            type: 'stream',
+            title: 'Commerce Stream',
+            description: 'Recommended based on your quiz results',
+            score: 88
+          });
+        }
+      });
+    }
+    
+    // If no specific recommendations, show general ones
+    if (recs.length === 0) {
+      recs.push({
+        type: 'general',
+        title: 'Explore Career Options',
+        description: 'Browse our course catalog to find your path',
+        score: 85
+      });
+    }
+    
+    setRecommendations(recs);
+  };
+
+  useEffect(() => {
     // Mock upcoming events
     setUpcomingEvents([
       {
@@ -74,7 +171,18 @@ const Dashboard = () => {
     ]);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.settings-dropdown')) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
+    setSettingsOpen(false);
     logout();
     navigate('/login');
   };
@@ -127,12 +235,12 @@ const Dashboard = () => {
             <div className="flex items-center">
               <button
                 onClick={() => window.location.reload()}
-                className="flex items-center space-x-3 hover:opacity-80 transition-opacity mr-4"
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity mr-2"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
               </button>
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -147,9 +255,28 @@ const Dashboard = () => {
               <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
                 <Bell className="h-5 w-5" />
               </button>
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-                <Settings className="h-5 w-5" />
-              </button>
+              <div className="relative settings-dropdown">
+                <button
+                  onClick={() => setSettingsOpen(!settingsOpen)}
+                  className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 flex items-center"
+                >
+                  <Settings className="h-5 w-5" />
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </button>
+                {settingsOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                    <div className="py-1">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <span className="text-white font-medium text-sm">

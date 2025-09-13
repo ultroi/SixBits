@@ -3,18 +3,12 @@ import { Send, Plus, Trash2, Sparkles, MessageSquare } from 'lucide-react';
 import { chatService } from '../services/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
 
-
-const user = { firstName: 'Akshay', lastName: 'Singh', _id: '123' };
-const userProfile = {
-  age: 18,
-  gender: 'Male',
-  class: '12th',
-  academicInterests: ['Science', 'Engineering'],
-  quizResults: JSON.parse(localStorage.getItem('quizResults') || 'null')
-};
 
 const ChatInterface = () => {
+  const { user } = useAuth();
   const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -25,6 +19,14 @@ const ChatInterface = () => {
   const textareaRef = useRef(null);
   const navigate = useNavigate();
 
+  // Create userProfile from user data
+  const userProfile = {
+    age: user?.age,
+    gender: user?.gender,
+    class: user?.class,
+    academicInterests: user?.academicInterests,
+    quizResults: JSON.parse(localStorage.getItem('quizResults') || 'null')
+  };
 
   const quickReplies = userProfile.quizResults
     ? [
@@ -41,23 +43,24 @@ const ChatInterface = () => {
     ];
 
   useEffect(() => {
-    const userName = user.firstName || 'there';
+    const userName = user?.firstName || 'there';
+    const quizResults = JSON.parse(localStorage.getItem('quizResults') || 'null');
     let initialMessage = `Hello ${userName}! I'm Zariya, your AI career counselor. `;
 
-    if (userProfile.quizResults && userProfile.quizResults.interests && userProfile.quizResults.strengths) {
-      const interestsEntries = Object.entries(userProfile.quizResults.interests);
-      const strengthsEntries = Object.entries(userProfile.quizResults.strengths);
+    if (quizResults && quizResults.interests && quizResults.strengths) {
+      const interestsEntries = Object.entries(quizResults.interests);
+      const strengthsEntries = Object.entries(quizResults.strengths);
 
       if (interestsEntries.length > 0 && strengthsEntries.length > 0) {
         const topInterest = interestsEntries.sort(([, a], [, b]) => b - a)[0];
         const topStrength = strengthsEntries.sort(([, a], [, b]) => b - a)[0];
 
-        initialMessage += `Based on your profile (${userProfile.class || 'student'}, interested in ${userProfile.academicInterests ? userProfile.academicInterests.join(', ') : 'various subjects'}) and quiz results, I see you're strong in ${topStrength[0]} and interested in ${topInterest[0]}. How can I help you with your career planning today?`;
+        initialMessage += `Based on your profile (${user?.class || 'student'}, interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}) and quiz results, I see you're strong in ${topStrength[0]} and interested in ${topInterest[0]}. How can I help you with your career planning today?`;
       } else {
-        initialMessage += `I see you're in ${userProfile.class || 'school'} and interested in ${userProfile.academicInterests ? userProfile.academicInterests.join(', ') : 'various subjects'}. Have you taken our aptitude quiz yet? It will help me give you more personalized recommendations.`;
+        initialMessage += `I see you're in ${user?.class || 'school'} and interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}. Have you taken our aptitude quiz yet? It will help me give you more personalized recommendations.`;
       }
     } else {
-      initialMessage += `I see you're in ${userProfile.class || 'school'} and interested in ${userProfile.academicInterests ? userProfile.academicInterests.join(', ') : 'various subjects'}. Have you taken our aptitude quiz yet? It will help me give you more personalized recommendations.`;
+      initialMessage += `I see you're in ${user?.class || 'school'} and interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}. Have you taken our aptitude quiz yet? It will help me give you more personalized recommendations.`;
     }
 
     const initialThread = {
@@ -75,7 +78,7 @@ const ChatInterface = () => {
     setThreads([initialThread]);
     setActiveThreadId(initialThread.id);
     setMessages(initialThread.messages);
-  }, []);
+  }, [user?.firstName, user?.class, user?.academicInterests]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -137,11 +140,12 @@ const ChatInterface = () => {
   };
 
   const createNewThread = () => {
-    const userName = user.firstName || 'there';
+    const userName = user?.firstName || 'there';
+    const quizResults = JSON.parse(localStorage.getItem('quizResults') || 'null');
     let welcomeMessage = `Hello ${userName}! Starting a new conversation. `;
 
-    if (userProfile.quizResults) {
-      welcomeMessage += `I remember from your quiz that you're interested in ${userProfile.academicInterests ? userProfile.academicInterests.join(', ') : 'various subjects'}. What would you like to discuss?`;
+    if (quizResults) {
+      welcomeMessage += `I remember from your quiz that you're interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}. What would you like to discuss?`;
     } else {
       welcomeMessage += `How can I assist you with your career planning today?`;
     }
@@ -198,15 +202,15 @@ const ChatInterface = () => {
       <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
               </button>
               <div className="hidden md:block">
                 <h2 className="text-lg font-semibold text-gray-900">AI Career Counselor</h2>
@@ -264,8 +268,8 @@ const ChatInterface = () => {
         )}
 
         {/* Chat Messages */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
-          <div className="h-full overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 mb-4 relative">
+            <div className="h-[70vh] overflow-y-auto p-6 space-y-4 chat-scroll" style={{scrollBehavior: 'smooth'}}>
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -280,12 +284,14 @@ const ChatInterface = () => {
                     )}
 
                     <div
-                      className={`rounded-2xl px-4 py-3 shadow-sm ${message.sender === 'user'
+                      className={`rounded-2xl px-4 py-3 shadow-sm text-sm leading-relaxed ${message.sender === 'user'
                           ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
                           : 'bg-gray-50 text-gray-800 border border-gray-200'
                         }`}
                     >
-                      <p className="text-sm leading-relaxed">{message.content}</p>
+                      <div className="markdown-content">
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      </div>
                       <div className="flex items-center justify-end mt-2">
                         <span className={`text-xs ${message.sender === 'user' ? 'text-indigo-100' : 'text-gray-500'
                           }`}>
@@ -392,6 +398,126 @@ const ChatInterface = () => {
 
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+
+        .chat-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #6366F1 #F1F5F9;
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+          width: 12px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-track {
+          background: #F1F5F9;
+          border-radius: 6px;
+          margin: 4px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #6366F1, #8B5CF6);
+          border-radius: 6px;
+          border: 2px solid #F1F5F9;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #4F46E5, #7C3AED);
+          transform: scale(1.1);
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb:active {
+          background: linear-gradient(135deg, #3730A3, #581C87);
+        }
+
+        .chat-scroll::-webkit-scrollbar-corner {
+          background: #F1F5F9;
+        }
+
+        .markdown-content {
+          line-height: 1.6;
+        }
+
+        .markdown-content p {
+          margin-bottom: 0.5rem;
+        }
+
+        .markdown-content p:last-child {
+          margin-bottom: 0;
+        }
+
+        .markdown-content strong,
+        .markdown-content b {
+          font-weight: 600;
+        }
+
+        .markdown-content ul,
+        .markdown-content ol {
+          margin: 0.5rem 0;
+          padding-left: 1.5rem;
+        }
+
+        .markdown-content li {
+          margin-bottom: 0.25rem;
+        }
+
+        .markdown-content li:last-child {
+          margin-bottom: 0;
+        }
+
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+          font-weight: 600;
+          margin: 0.5rem 0 0.25rem 0;
+          line-height: 1.3;
+        }
+
+        .markdown-content h1 {
+          font-size: 1.1em;
+        }
+
+        .markdown-content h2 {
+          font-size: 1em;
+        }
+
+        .markdown-content h3 {
+          font-size: 0.95em;
+        }
+
+        .markdown-content blockquote {
+          border-left: 3px solid #6366F1;
+          padding-left: 0.75rem;
+          margin: 0.5rem 0;
+          font-style: italic;
+          color: #4B5563;
+        }
+
+        .markdown-content code {
+          background-color: rgba(99, 102, 241, 0.1);
+          padding: 0.125rem 0.25rem;
+          border-radius: 0.25rem;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 0.875em;
+        }
+
+        .markdown-content pre {
+          background-color: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 0.375rem;
+          padding: 0.75rem;
+          margin: 0.5rem 0;
+          overflow-x: auto;
+          font-size: 0.875em;
+        }
+
+        .markdown-content pre code {
+          background-color: transparent;
+          padding: 0;
         }
       `}</style>
     </div>

@@ -6,10 +6,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash",
   generationConfig: {
-    maxOutputTokens: 800, // Reduced from 1042 to help prevent timeouts
-    temperature: 0.7, // Control randomness
+    maxOutputTokens: 500, // Reduced for concise responses
+    temperature: 0.6, // Slightly reduced for more focused responses
     topK: 40, // Consider top 40 tokens
-    topP: 0.95, // Nucleus sampling
+    topP: 0.9, // Slightly reduced for more focused sampling
   }
 });
 
@@ -18,6 +18,17 @@ const SYSTEM_CONTEXT = `
 You are Zariya, an expert AI career counselor with deep knowledge of various career paths, 
 education requirements, job markets, and skill development. Your goal is to help users 
 explore career options, make informed decisions, and develop plans to achieve their professional goals.
+
+RESPONSE FORMATTING GUIDELINES:
+- Keep responses VERY concise (aim for 100-200 words maximum)
+- NEVER write long paragraphs - break everything into short points
+- Use clear, structured formatting with markdown
+- Use **bold** for emphasis on key points
+- Use bullet points (-) for ALL lists and steps
+- Use numbered lists (1., 2., 3.) for sequential steps
+- Use proper headings with ## for sections when needed
+- Avoid unnecessary filler words and get straight to the point
+- Structure responses with: brief intro → key points in bullets → conclusion
 
 Some guidelines for your responses:
 1. Be supportive, encouraging, and empathetic
@@ -81,6 +92,69 @@ const formatChatHistory = (messages) => {
     role: msg.sender === 'user' ? 'user' : 'model',
     parts: [{ text: msg.content }]
   }));
+};
+
+// Post-process AI response for better formatting and conciseness
+const formatAIResponse = (response) => {
+  let formatted = response ? response.toString().trim() : '';
+
+  // Normalize line endings and collapse excessive blank lines
+  formatted = formatted.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+
+  // Remove common markdown artefacts produced by model (or duplicated markers)
+  // 1) Remove isolated asterisks surrounded by whitespace (or asterisks used as stray separators)
+  formatted = formatted.replace(/(^|\s)\*(?=\s|$)/g, '$1');
+
+  // 2) Collapse consecutive asterisks with spaces between them ("* *" -> "**") then limit runs to max 2
+  formatted = formatted.replace(/\*\s+\*/g, '**');
+  formatted = formatted.replace(/\*{3,}/g, '**');
+
+  // 3) Clean up bold markers so there's no extra spaces inside: **  text  ** -> **text**
+  formatted = formatted.replace(/\*\*\s*(.*?)\s*\*\*/g, '**$1**');
+
+  // Convert star bullets to dash bullets for consistency and ensure a single space after bullet
+  formatted = formatted.replace(/^\s*\*\s+/gm, '- ');
+  formatted = formatted.replace(/^-\s*/gm, '- ');
+
+  // Ensure proper space after headings (e.g., "##Heading" -> "## Heading")
+  formatted = formatted.replace(/^(#{1,6})([^\s#])/gm, '$1 $2');
+
+  // Ensure numbered lists have a space after the dot ("1.Option" -> "1. Option")
+  formatted = formatted.replace(/^(\s*\d+)\.(\S)/gm, '$1. $2');
+
+  // Remove unnecessary filler phrases that make replies verbose
+  const fillerPhrases = [
+    /\bWell,?\s*(to be honest|let me think|you know)\b/gi,
+    /\bI would say that\b/gi,
+    /\bIn my opinion\b/gi,
+    /\bBasically\b/gi,
+    /\bActually\b/gi,
+    /\bSo,?\b/gi,
+    /\bAnyway,?\b/gi,
+    /\bAs an? (AI|assistant)\b/gi
+  ];
+  fillerPhrases.forEach(phrase => { formatted = formatted.replace(phrase, ''); });
+
+  // Trim repeated spaces
+  formatted = formatted.replace(/[ \t]{2,}/g, ' ');
+
+  // Ensure the response starts with a capital letter or a markdown element
+  const firstNonSpace = formatted.trim().charAt(0) || '';
+  if (firstNonSpace && !firstNonSpace.match(/[A-Z#\-*\[]/)) {
+    formatted = formatted.trim();
+    formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  // Limit response length to keep replies concise (approximate by words)
+  const words = formatted.split(/\s+/).filter(Boolean);
+  if (words.length > 450) {
+    formatted = words.slice(0, 420).join(' ') + '\n\n...';
+  }
+
+  // Final tidy: remove leading/trailing blank lines and ensure single trailing newline
+  formatted = formatted.replace(/^\s+|\s+$/g, '');
+
+  return formatted;
 };
 
 
@@ -193,6 +267,17 @@ explore career options, make informed decisions, and develop plans to achieve th
 
 You are talking to ${userName}. Always address them by their first name in your responses.
 
+RESPONSE FORMATTING GUIDELINES:
+- Keep responses VERY concise (aim for 100-200 words maximum)
+- NEVER write long paragraphs - break everything into short points
+- Use clear, structured formatting with markdown
+- Use **bold** for emphasis on key points
+- Use bullet points (-) for ALL lists and steps
+- Use numbered lists (1., 2., 3.) for sequential steps
+- Use proper headings with ## for sections when needed
+- Avoid unnecessary filler words and get straight to the point
+- Structure responses with: brief intro → key points in bullets → conclusion
+
 Some guidelines for your responses:
 1. Be supportive, encouraging, and empathetic
 2. Provide personalized advice based on the user's interests, skills, and goals
@@ -237,9 +322,12 @@ ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarM
     
     const botResponse = response.response.text();
     
-    // Add bot response to chat history
+    // Format the response for better readability and conciseness
+    const formattedResponse = formatAIResponse(botResponse);
+    
+    // Add formatted bot response to chat history
     chat.messages.push({
-      content: botResponse,
+      content: formattedResponse,
       sender: 'bot',
       timestamp: new Date()
     });
@@ -250,7 +338,7 @@ ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarM
     // Save chat history
     await chat.save();
     
-    return botResponse;
+    return formattedResponse;
   } catch (error) {
     // Centralized error logging
     console.error('AI processing error:', error && (error.stack || error.message || error));
@@ -277,5 +365,89 @@ ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarM
     // Attach original error for debugging (not sent to clients)
     outErr.original = error;
     throw outErr;
+  }
+};
+
+// Generate personalized quiz questions based on user profile
+exports.generatePersonalizedQuiz = async (userProfile) => {
+  try {
+    const {
+      firstName,
+      age,
+      gender,
+      class: userClass,
+      academicInterests,
+      location
+    } = userProfile;
+
+    const prompt = `
+You are an expert career counselor creating a personalized aptitude quiz for ${firstName || 'a student'}.
+
+USER PROFILE:
+- Age: ${age || 'Not specified'}
+- Gender: ${gender || 'Not specified'}
+- Class/Grade: ${userClass || 'Not specified'}
+- Academic Interests: ${academicInterests?.join(', ') || 'Not specified'}
+- Location: ${location?.city || 'Not specified'}, ${location?.state || 'Not specified'}
+
+Create 10 personalized multiple-choice questions (4 options each) that assess:
+1. Academic interests and preferences
+2. Personal strengths and skills
+3. Career personality traits
+4. Subject preferences based on their profile
+
+Each question should have:
+- A clear, engaging question
+- 4 realistic options
+- Indicate which option represents the "correct" or most suitable answer (as index 0-3)
+- A category: "interest", "strength", or "personality"
+
+Format your response as valid JSON:
+{
+  "questions": [
+    {
+      "question": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": 0,
+      "category": "interest"
+    }
+  ]
+}
+
+Make questions relevant to their age, class level, and interests. Focus on career exploration and academic guidance.
+`;
+
+    const response = await retryWithBackoff(() => 
+      model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.7,
+        }
+      })
+    );
+
+    const responseText = response.response.text();
+    
+    // Clean the response to extract JSON
+    let jsonText = responseText.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\s*/, '').replace(/```\s*$/, '');
+    }
+
+    try {
+      const quizData = JSON.parse(jsonText);
+      return quizData.questions || [];
+    } catch (parseError) {
+      console.error('Failed to parse quiz JSON:', parseError);
+      console.error('Raw response:', responseText);
+      throw new Error('Failed to generate valid quiz questions');
+    }
+
+  } catch (error) {
+    console.error('Quiz generation error:', error);
+    throw new Error('Failed to generate personalized quiz');
   }
 };

@@ -1,4 +1,4 @@
-# Zariya - AI Career Counseling Platform
+cd # Zariya - AI Career Counseling Platform
 
 A comprehensive career guidance platform that helps students make informed decisions about their education and career paths through AI-powered recommendations, aptitude assessments, and personalized guidance.
 

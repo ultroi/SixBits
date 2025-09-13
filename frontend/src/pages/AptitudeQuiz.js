@@ -16,171 +16,199 @@ import {
   Trophy,
   Zap
 } from 'lucide-react';
-
-const questions = [
-  {
-    id: 1,
-    category: 'interests',
-    question: 'What type of activities do you enjoy the most?',
-    options: [
-      { text: 'Solving complex problems and puzzles', value: 'Science', points: 3 },
-      { text: 'Creating art, music, or writing stories', value: 'Arts', points: 3 },
-      { text: 'Working with numbers and data analysis', value: 'Mathematics', points: 3 },
-      { text: 'Helping others and working in teams', value: 'Social Work', points: 3 }
-    ]
-  },
-  {
-    id: 2,
-    category: 'interests',
-    question: 'Which subject interests you the most?',
-    options: [
-      { text: 'Physics and Chemistry', value: 'Science', points: 3 },
-      { text: 'Literature and Languages', value: 'Arts', points: 3 },
-      { text: 'Mathematics and Statistics', value: 'Mathematics', points: 3 },
-      { text: 'Psychology and Sociology', value: 'Social Work', points: 3 }
-    ]
-  },
-  {
-    id: 3,
-    category: 'interests',
-    question: 'What would you prefer to do in your free time?',
-    options: [
-      { text: 'Experiment with new technologies or gadgets', value: 'Science', points: 2 },
-      { text: 'Read books, write, or play musical instruments', value: 'Arts', points: 2 },
-      { text: 'Play strategy games or solve riddles', value: 'Mathematics', points: 2 },
-      { text: 'Volunteer work or organize group activities', value: 'Social Work', points: 2 }
-    ]
-  },
-  {
-    id: 4,
-    category: 'strengths',
-    question: 'Which of these comes most naturally to you?',
-    options: [
-      { text: 'Understanding how things work and fixing them', value: 'Technical', points: 3 },
-      { text: 'Expressing ideas through words or visuals', value: 'Creative', points: 3 },
-      { text: 'Analyzing patterns and making calculations', value: 'Analytical', points: 3 },
-      { text: 'Leading groups and resolving conflicts', value: 'Leadership', points: 3 }
-    ]
-  },
-  {
-    id: 5,
-    category: 'strengths',
-    question: 'How do you prefer to learn new things?',
-    options: [
-      { text: 'Through hands-on experiments and practical work', value: 'Technical', points: 3 },
-      { text: 'Through discussions and creative projects', value: 'Creative', points: 3 },
-      { text: 'Through logical reasoning and problem-solving', value: 'Analytical', points: 3 },
-      { text: 'Through group discussions and teaching others', value: 'Leadership', points: 3 }
-    ]
-  },
-  {
-    id: 6,
-    category: 'strengths',
-    question: 'What type of challenges do you enjoy?',
-    options: [
-      { text: 'Building or repairing things', value: 'Technical', points: 2 },
-      { text: 'Designing or creating something new', value: 'Creative', points: 2 },
-      { text: 'Solving mathematical or logical puzzles', value: 'Analytical', points: 2 },
-      { text: 'Organizing events or leading projects', value: 'Leadership', points: 2 }
-    ]
-  },
-  {
-    id: 7,
-    category: 'personality',
-    question: 'How do you typically approach new situations?',
-    options: [
-      { text: 'I prefer to observe and analyze first', value: 'Introverted', points: 3 },
-      { text: 'I jump in and start interacting with others', value: 'Extroverted', points: 3 },
-      { text: 'I look for practical solutions immediately', value: 'Practical', points: 3 },
-      { text: 'I consider how it affects people around me', value: 'Empathetic', points: 3 }
-    ]
-  },
-  {
-    id: 8,
-    category: 'personality',
-    question: 'What motivates you the most?',
-    options: [
-      { text: 'Discovering new knowledge and understanding', value: 'Introverted', points: 3 },
-      { text: 'Achieving recognition and social connections', value: 'Extroverted', points: 3 },
-      { text: 'Completing tasks efficiently and effectively', value: 'Practical', points: 3 },
-      { text: 'Making a positive impact on others\' lives', value: 'Empathetic', points: 3 }
-    ]
-  },
-  {
-    id: 9,
-    category: 'personality',
-    question: 'How do you make important decisions?',
-    options: [
-      { text: 'I carefully think through all aspects logically', value: 'Introverted', points: 2 },
-      { text: 'I discuss options with others and get their input', value: 'Extroverted', points: 2 },
-      { text: 'I focus on what will work best in practice', value: 'Practical', points: 2 },
-      { text: 'I consider how the decision affects everyone involved', value: 'Empathetic', points: 2 }
-    ]
-  }
-];
+import { quizService, authService } from '../services/api';
 
 const AptitudeQuiz = () => {
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState(null);
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [questionAnimation, setQuestionAnimation] = useState('');
   const navigate = useNavigate();
+
+  // Fetch personalized questions on component mount
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get current user
+        const { user } = await authService.getCurrentUser();
+        
+        // Validate user exists and has ID
+        if (!user || !user._id) {
+          console.error('User authentication failed:', { user, userId: user?._id });
+          setError('User not authenticated. Please login again.');
+          navigate('/login');
+          return;
+        }
+        
+        // Generate personalized quiz
+        const quizData = await quizService.generatePersonalizedQuiz(user._id);
+        
+        // Transform questions to match frontend format
+        const transformedQuestions = quizData.questions.map((q, index) => ({
+          id: index + 1,
+          question: q.question,
+          category: q.category,
+          options: q.options.map((option, optIndex) => ({
+            text: option,
+            value: option,
+            points: optIndex === q.correctAnswer ? 3 : (optIndex === (q.correctAnswer + 1) % 4 ? 2 : 1)
+          }))
+        }));
+        
+        setQuestions(transformedQuestions);
+      } catch (err) {
+        console.error('Failed to fetch questions:', err);
+        setError('Failed to load personalized quiz. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, [navigate]);
 
   // Check for existing quiz results on component mount
   useEffect(() => {
-    const existingResults = localStorage.getItem('quizResults');
-    if (existingResults) {
-      const parsedResults = JSON.parse(existingResults);
-      setResults(parsedResults);
-      setShowResults(true);
-    }
+    const checkQuizStatus = async () => {
+      try {
+        // Get current user
+        const { user } = await authService.getCurrentUser();
+        
+        if (!user || !user._id) {
+          // Clear any old localStorage data for unauthenticated users
+          localStorage.removeItem('quizResults');
+          localStorage.removeItem('quizCompleted');
+          return;
+        }
+
+        // Check if user has completed quiz in database
+        const userQuizResults = await quizService.getUserQuizResults(user._id);
+        
+        if (userQuizResults.quizResults && userQuizResults.quizResults.length > 0) {
+          // User has completed quiz in database, show results
+          const latestResult = userQuizResults.quizResults[userQuizResults.quizResults.length - 1];
+          
+          // Transform database results to frontend format
+          const frontendResults = {
+            interests: {},
+            strengths: {},
+            personality: {}
+          };
+
+          latestResult.interests?.forEach(interest => {
+            frontendResults.interests[interest] = frontendResults.interests[interest] || 0;
+            frontendResults.interests[interest] += 25;
+          });
+
+          latestResult.strengths?.forEach(strength => {
+            frontendResults.strengths[strength] = frontendResults.strengths[strength] || 0;
+            frontendResults.strengths[strength] += 25;
+          });
+
+          latestResult.personalityTraits?.forEach(trait => {
+            frontendResults.personality[trait] = frontendResults.personality[trait] || 0;
+            frontendResults.personality[trait] += 25;
+          });
+
+          setResults(frontendResults);
+          setShowResults(true);
+          
+          // Update localStorage with database results
+          localStorage.setItem('quizResults', JSON.stringify(frontendResults));
+          localStorage.setItem('quizCompleted', 'true');
+        } else {
+          // User hasn't completed quiz, clear any stale localStorage data
+          localStorage.removeItem('quizResults');
+          localStorage.removeItem('quizCompleted');
+        }
+      } catch (err) {
+        console.error('Failed to check quiz status:', err);
+        // Clear localStorage on error to be safe
+        localStorage.removeItem('quizResults');
+        localStorage.removeItem('quizCompleted');
+      }
+    };
+
+    checkQuizStatus();
   }, []);
-
-  const calculateResults = useCallback(() => {
-    const scores = { interests: {}, strengths: {}, personality: {} };
-
-    Object.entries(answers).forEach(([questionId, answer]) => {
-      const question = questions.find(q => q.id === parseInt(questionId));
-      if (question) {
-        const { category } = question;
-        const { value, points } = answer;
-
-        if (!scores[category][value]) scores[category][value] = 0;
-        scores[category][value] += points;
-      }
-    });
-
-    Object.keys(scores).forEach(category => {
-      const categoryScores = scores[category];
-      const total = Object.values(categoryScores).reduce((sum, score) => sum + score, 0);
-      if (total === 0) {
-        Object.keys(categoryScores).forEach(key => { categoryScores[key] = 0; });
-      } else {
-        Object.keys(categoryScores).forEach(key => {
-          categoryScores[key] = Math.round((categoryScores[key] / total) * 100);
-        });
-      }
-    });
-
-    return scores;
-  }, [answers]);
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const calculatedResults = calculateResults();
-    setResults(calculatedResults);
-    setShowCelebration(true);
-    setTimeout(() => {
-      setShowResults(true);
-      setShowCelebration(false);
-    }, 3000);
-    localStorage.setItem('quizResults', JSON.stringify(calculatedResults));
-    localStorage.setItem('quizCompleted', 'true');
-    setIsSubmitting(false);
-  }, [calculateResults]);
+    try {
+      // Get current user
+      const { user } = await authService.getCurrentUser();
+      
+      // Transform answers to match backend format
+      const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => {
+        const questionIndex = parseInt(questionId) - 1; // Convert to 0-based index
+        return questions[questionIndex].options.findIndex(opt => opt.text === answer.text);
+      });
+
+      // Submit quiz results
+      const quizData = {
+        quizId: 'personalized-quiz', // Since we're generating dynamic quizzes
+        answers: formattedAnswers,
+        userId: user._id
+      };
+
+      const result = await quizService.submitQuiz(quizData);
+      
+      // Show success message for permanent save
+      console.log('Quiz results saved permanently to database:', result);
+      
+      // Transform backend result to frontend format
+      const frontendResults = {
+        interests: {},
+        strengths: {},
+        personality: {}
+      };
+
+      // Convert backend results to frontend format
+      result.interests?.forEach(interest => {
+        frontendResults.interests[interest] = frontendResults.interests[interest] || 0;
+        frontendResults.interests[interest] += 25; // Distribute points
+      });
+
+      result.strengths?.forEach(strength => {
+        frontendResults.strengths[strength] = frontendResults.strengths[strength] || 0;
+        frontendResults.strengths[strength] += 25;
+      });
+
+      result.personalityTraits?.forEach(trait => {
+        frontendResults.personality[trait] = frontendResults.personality[trait] || 0;
+        frontendResults.personality[trait] += 25;
+      });
+
+      setResults(frontendResults);
+      setShowCelebration(true);
+      
+      // Add success notification
+      setTimeout(() => {
+        alert('✅ Quiz results saved successfully to your profile!');
+        setShowResults(true);
+        setShowCelebration(false);
+      }, 3000);
+      
+      localStorage.setItem('quizResults', JSON.stringify(frontendResults));
+      localStorage.setItem('quizCompleted', 'true');
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      alert('Failed to submit quiz. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [answers, questions]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -438,7 +466,51 @@ const AptitudeQuiz = () => {
     );
   }
 
-  // QUIZ PAGE
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Generating Your Personalized Quiz</h2>
+          <p className="text-gray-600">Creating questions based on your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to Load Quiz</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No questions loaded
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-500 text-6xl mb-4">📝</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Questions Available</h2>
+          <p className="text-gray-600">Unable to generate personalized questions at this time.</p>
+        </div>
+      </div>
+    );
+  }
+
   const currentQ = questions[currentQuestion];
   const progress = getProgressPercentage();
 
@@ -498,7 +570,7 @@ const AptitudeQuiz = () => {
             </div>
 
             {/* Question */}
-            <div className="mb-8">
+            <div className={`mb-8 ${questionAnimation}`}>
               <div className="flex items-center mb-4">
                 <div className={`p-3 bg-gradient-to-r ${getCategoryColor(currentQ.category)} rounded-xl mr-3 animate-pulse`}>
                   {getCategoryIcon(currentQ.category)}
@@ -512,7 +584,7 @@ const AptitudeQuiz = () => {
                     key={index}
                     onClick={() => handleAnswer(currentQ.id, option)}
                     className={`w-full text-left p-4 rounded-lg border transition-all ${
-                      answers[currentQ.id]?.text === option.text
+                      (answers[currentQ.id]?.text === option.text || selectedAnswer?.text === option.text)
                         ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
                         : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'
                     }`}
@@ -541,9 +613,10 @@ const AptitudeQuiz = () => {
               {currentQuestion === questions.length - 1 ? (
                 <button
                   onClick={handleSubmit}
-                  className="flex items-center px-4 py-2 border border-transparent rounded-lg text-white bg-indigo-600 hover:bg-indigo-700"
+                  disabled={isSubmitting}
+                  className="flex items-center px-4 py-2 border border-transparent rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  Submit Quiz
+                  {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
                   <CheckCircle className="w-4 h-4 ml-2" />
                 </button>
               ) : (

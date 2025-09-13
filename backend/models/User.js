@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
       enum: ['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business', 'Other']
     }],
     quizResults: [{
-      quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
+      quizId: { type: mongoose.Schema.Types.Mixed, ref: 'Quiz' },
       score: Number,
       interests: [String],
       strengths: [String],
@@ -53,14 +53,18 @@ const userSchema = new mongoose.Schema(
       dateTaken: { type: Date, default: Date.now }
     }],
     location: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        default: 'Point'
-      },
+      city: String,
+      state: String,
       coordinates: {
-        type: [Number],
-        default: [0, 0]
+        type: {
+          type: String,
+          enum: ['Point'],
+          default: 'Point'
+        },
+        coordinates: {
+          type: [Number],
+          default: [0, 0]
+        }
       }
     }
   },
