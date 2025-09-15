@@ -44,7 +44,15 @@ async function startServer() {
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      dbName: 'Zariya'
+      dbName: 'Zariya',
+      // Fail fast if server selection takes too long
+      serverSelectionTimeoutMS: 5000,
+      // Control socket timeouts
+      socketTimeoutMS: 45000,
+      // Controls initial connect timeout
+      connectTimeoutMS: 10000,
+      // Disable mongoose buffering of model operations when not connected
+      bufferCommands: false
     });
     
     console.log('Connected to MongoDB');
@@ -61,7 +69,10 @@ async function startServer() {
       process.exit(0);
     });
   } catch (err) {
-    console.error('Server startup error:', err);
+    console.error('Server startup error:');
+    console.error(err);
+    // Exit process when DB connection fails at startup to avoid buffered operations
+    process.exit(1);
   }
 }
 

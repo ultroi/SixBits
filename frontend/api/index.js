@@ -43,18 +43,29 @@ app.use('/api/timeline', timelineRoutes);
 let isConnected = false;
 
 async function connectToDatabase() {
+  // If Mongoose already has an established connection, reuse it (Vercel serverless optimization)
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return;
+  }
+
   if (isConnected) return;
 
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      dbName: 'Zariya'
+      dbName: 'Zariya',
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      bufferCommands: false
     });
     isConnected = true;
     console.log('Connected to MongoDB');
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error('Database connection error:');
+    console.error(error);
     throw error;
   }
 }

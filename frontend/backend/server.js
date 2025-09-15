@@ -44,7 +44,11 @@ async function startServer() {
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      dbName: 'Zariya'
+      dbName: 'Zariya',
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      bufferCommands: false
     });
     
     console.log('Connected to MongoDB');
@@ -61,7 +65,9 @@ async function startServer() {
       process.exit(0);
     });
   } catch (err) {
-    console.error('Server startup error:', err);
+    console.error('Server startup error:');
+    console.error(err);
+    process.exit(1);
   }
 }
 
