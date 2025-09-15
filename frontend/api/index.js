@@ -7,23 +7,23 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Import models
-const User = require('../../backend/models/User');
-const Chat = require('../../backend/models/Chat');
-const College = require('../../backend/models/College');
-const Course = require('../../backend/models/Course');
-const Quiz = require('../../backend/models/Quiz');
-const Timeline = require('../../backend/models/Timeline');
+const User = require('../backend/models/User');
+const Chat = require('../backend/models/Chat');
+const College = require('../backend/models/College');
+const Course = require('../backend/models/Course');
+const Quiz = require('../backend/models/Quiz');
+const Timeline = require('../backend/models/Timeline');
 
 // Import routes
-const authRoutes = require('../../backend/routes/auth');
-const chatRoutes = require('../../backend/routes/chat');
-const quizRoutes = require('../../backend/routes/quiz');
-const collegeRoutes = require('../../backend/routes/college');
-const courseRoutes = require('../../backend/routes/course');
-const timelineRoutes = require('../../backend/routes/timeline');
+const authRoutes = require('../backend/routes/auth');
+const chatRoutes = require('../backend/routes/chat');
+const quizRoutes = require('../backend/routes/quiz');
+const collegeRoutes = require('../backend/routes/college');
+const courseRoutes = require('../backend/routes/course');
+const timelineRoutes = require('../backend/routes/timeline');
 
 // Import middleware
-const auth = require('../../backend/middleware/auth');
+const auth = require('../backend/middleware/auth');
 
 const app = express();
 
