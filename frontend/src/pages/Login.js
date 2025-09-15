@@ -115,7 +115,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
-                  placeholder="john@example.com"
+                  placeholder="email@example.com"
                 />
               </div>
               {errors.email && (

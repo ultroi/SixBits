@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
 import {
   GraduationCap,
   Search,
@@ -19,12 +20,14 @@ const CourseExplorer = () => {
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     stream: '',
     degree: '',
     duration: ''
   });
+  // eslint-disable-next-line no-unused-vars
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
 
@@ -273,26 +276,27 @@ const CourseExplorer = () => {
   const uniqueDurations = [...new Set(courses.map(course => course.duration))];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                  <Sparkles className="w-6 h-6 text-white animate-pulse" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+                <span className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">Zariya</span>
               </button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Course Explorer</h1>
-                <p className="text-gray-600 mt-1">Discover courses and career paths that match your interests</p>
-              </div>
+              <div className="hidden md:block h-8 w-px bg-gray-300"></div>
+              <h1 className="text-3xl font-bold text-gray-900 hover:text-indigo-700 transition-colors cursor-pointer">
+                Course Explorer
+              </h1>
             </div>
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -314,55 +318,54 @@ const CourseExplorer = () => {
               </button>
             </div>
           </div>
-
-          {/* Filters */}
-          {showFilters && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <select
-                value={filters.stream}
-                onChange={(e) => handleFilterChange('stream', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="">All Streams</option>
-                {uniqueStreams.map(stream => (
-                  <option key={stream} value={stream}>{stream}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.degree}
-                onChange={(e) => handleFilterChange('degree', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="">All Degrees</option>
-                {uniqueDegrees.map(degree => (
-                  <option key={degree} value={degree}>{degree}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.duration}
-                onChange={(e) => handleFilterChange('duration', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="">All Durations</option>
-                {uniqueDurations.map(duration => (
-                  <option key={duration} value={duration}>{duration} years</option>
-                ))}
-              </select>
-
-              <button
-                onClick={() => setFilters({ stream: '', degree: '', duration: '' })}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
         </div>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filters */}
+        {showFilters && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select
+              value={filters.stream}
+              onChange={(e) => handleFilterChange('stream', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="">All Streams</option>
+              {uniqueStreams.map(stream => (
+                <option key={stream} value={stream}>{stream}</option>
+              ))}
+            </select>
+
+            <select
+              value={filters.degree}
+              onChange={(e) => handleFilterChange('degree', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="">All Degrees</option>
+              {uniqueDegrees.map(degree => (
+                <option key={degree} value={degree}>{degree}</option>
+              ))}
+            </select>
+
+            <select
+              value={filters.duration}
+              onChange={(e) => handleFilterChange('duration', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="">All Durations</option>
+              {uniqueDurations.map(duration => (
+                <option key={duration} value={duration}>{duration} years</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setFilters({ stream: '', degree: '', duration: '' })}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Course List */}
           <div className="lg:col-span-2">

@@ -108,36 +108,130 @@ npm run seed
 
 ## Running the Application
 
-### Development Mode
+### Local Development (Backend + Frontend)
 
-#### Backend
+#### Quick Start
+```bash
+# Install all dependencies
+npm run install:all
+
+# Start both backend and frontend
+npm start
+```
+
+#### Manual Setup
+
+**Backend:**
 ```bash
 cd backend
+npm install
 npm run dev
 ```
 Server will run on http://localhost:5000
 
-#### Frontend
+**Frontend:**
 ```bash
 cd frontend
+npm install
 npm start
 ```
 Application will run on http://localhost:3000
 
-### Production Mode
+### Vercel Deployment
 
-#### Backend
+#### Prerequisites
+- Vercel account
+- MongoDB Atlas or cloud database
+- Google AI API key
+
+#### Deployment Steps
+
+1. **Install Vercel CLI**
 ```bash
-cd backend
-npm start
+npm install -g vercel
 ```
 
-#### Frontend
+2. **Login to Vercel**
 ```bash
-cd frontend
-npm run build
-# Serve the build folder using any static server
+vercel login
 ```
+
+3. **Deploy to Vercel**
+```bash
+# From the root directory
+vercel
+
+# For production deployment
+npm run vercel-deploy
+```
+
+4. **Set Environment Variables in Vercel**
+   - Go to your Vercel dashboard
+   - Select your project
+   - Go to Settings → Environment Variables
+   - Add the following variables:
+     ```
+     MONGODB_URI=your_mongodb_connection_string
+     JWT_SECRET=your_jwt_secret_key
+     GEMINI_API_KEY=your_google_ai_api_key
+     NODE_ENV=production
+     ```
+
+5. **Redeploy**
+```bash
+vercel --prod
+```
+
+### Environment Configuration
+
+#### For Local Development
+Create `.env` files in both `backend/` and `frontend/` directories:
+
+**backend/.env:**
+```
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/Zariya
+JWT_SECRET=your_jwt_secret_here
+GEMINI_API_KEY=your_google_ai_api_key
+```
+
+**frontend/.env:**
+```
+REACT_APP_API_URL=http://localhost:5000/api
+```
+
+#### For Vercel Production
+- Set environment variables in Vercel dashboard
+- Remove `REACT_APP_API_URL` from frontend/.env (it will default to `/api`)
+- Use MongoDB Atlas for database (not local MongoDB)
+
+#### Quick Environment Switcher
+Use the provided helper scripts to quickly switch between environments:
+
+**Windows:**
+```cmd
+dev-switch.bat local   # For local development
+dev-switch.bat vercel  # For Vercel deployment
+```
+
+**Linux/Mac:**
+```bash
+./dev-switch.sh local   # For local development
+./dev-switch.sh vercel  # For Vercel deployment
+```
+
+### Vercel Configuration
+The project includes `vercel.json` with the following configuration:
+- Frontend builds from `frontend/` directory
+- API routes handled by serverless functions in `frontend/api/`
+- Static files served from `frontend/build/`
+- Node.js 18 runtime for serverless functions
+
+### Post-Deployment
+- Frontend will be available at your Vercel domain
+- API endpoints will be accessible at `/api/*`
+- Database connections use environment variables
+- All routes are configured for SPA routing
 
 ## API Endpoints
 

@@ -297,6 +297,29 @@ const AptitudeQuiz = () => {
 
   // RESULTS PAGE
   if (showResults && results) {
+    // Map placeholder keys to meaningful names
+    const interestLabels = {
+      Interest_0: 'Technology',
+      Interest_1: 'Art',
+      Interest_2: 'Science',
+      Interest_3: 'Business'
+    };
+    const strengthLabels = {
+      Strength_0: 'Communication',
+      Strength_1: 'Problem Solving',
+      Strength_2: 'Creativity',
+      Strength_3: 'Leadership'
+    };
+    const personalityLabels = {
+      Trait_0: 'Introvert',
+      Trait_1: 'Extrovert',
+      Trait_2: 'Analytical',
+      Trait_3: 'Empathetic'
+    };
+
+    // Helper to get label or fallback to key
+    const getLabel = (key, labels) => labels[key] || key;
+
     const topInterest = Object.entries(results.interests).sort(([, a], [, b]) => b - a)[0];
     const topStrength = Object.entries(results.strengths).sort(([, a], [, b]) => b - a)[0];
 
@@ -345,7 +368,7 @@ const AptitudeQuiz = () => {
                   <div className="space-y-3">
                     {Object.entries(results.interests).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center group">
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{key}</span>
+                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{getLabel(key, interestLabels)}</span>
                         <div className="flex items-center space-x-2">
                           <div className="w-20 bg-gray-200 rounded-full h-3 overflow-hidden">
                             <div
@@ -371,7 +394,7 @@ const AptitudeQuiz = () => {
                   <div className="space-y-3">
                     {Object.entries(results.strengths).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center group">
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{key}</span>
+                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{getLabel(key, strengthLabels)}</span>
                         <div className="flex items-center space-x-2">
                           <div className="w-20 bg-gray-200 rounded-full h-3 overflow-hidden">
                             <div
@@ -397,7 +420,7 @@ const AptitudeQuiz = () => {
                   <div className="space-y-3">
                     {Object.entries(results.personality).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center group">
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{key}</span>
+                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{getLabel(key, personalityLabels)}</span>
                         <div className="flex items-center space-x-2">
                           <div className="w-20 bg-gray-200 rounded-full h-3 overflow-hidden">
                             <div
@@ -424,10 +447,10 @@ const AptitudeQuiz = () => {
                     <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                       <div className="flex items-center mb-2">
                         <TrendingUp className="w-5 h-5 text-indigo-500 mr-2 animate-bounce" />
-                        <span className="font-medium text-gray-900">Top Interest: {topInterest[0]}</span>
+                        <span className="font-medium text-gray-900">Top Interest: {getLabel(topInterest[0], interestLabels)}</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Based on your interests, {topInterest[0].toLowerCase()} stream would be ideal for you.
+                        Based on your interests, {getLabel(topInterest[0], interestLabels).toLowerCase()} stream would be ideal for you.
                       </p>
                     </div>
                   )}
@@ -435,10 +458,10 @@ const AptitudeQuiz = () => {
                     <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                       <div className="flex items-center mb-2">
                         <Star className="w-5 h-5 text-purple-500 mr-2 animate-bounce" />
-                        <span className="font-medium text-gray-900">Top Strength: {topStrength[0]}</span>
+                        <span className="font-medium text-gray-900">Top Strength: {getLabel(topStrength[0], strengthLabels)}</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Your {topStrength[0].toLowerCase()} skills will help you excel in your chosen field.
+                        Your {getLabel(topStrength[0], strengthLabels).toLowerCase()} skills will help you excel in your chosen field.
                       </p>
                     </div>
                   )}

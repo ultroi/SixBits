@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
 import {
   MapPin,
   Search,
@@ -175,26 +176,27 @@ const CollegeDirectory = () => {
   const facilities = ['hostel', 'library', 'lab', 'internet', 'sports'];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                  <Sparkles className="w-6 h-6 text-white animate-pulse" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+                <span className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">Zariya</span>
               </button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">College Directory</h1>
-                <p className="text-gray-600 mt-1">Find government colleges near you with detailed information</p>
-              </div>
+              <div className="hidden md:block h-8 w-px bg-gray-300"></div>
+              <h1 className="text-3xl font-bold text-gray-900 hover:text-indigo-700 transition-colors cursor-pointer">
+                College Directory
+              </h1>
             </div>
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -221,56 +223,55 @@ const CollegeDirectory = () => {
               </button>
             </div>
           </div>
-
-          {/* Filters */}
-          {showFilters && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <select
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="">All Types</option>
-                <option value="Government">Government</option>
-                <option value="Private">Private</option>
-              </select>
-
-              <select
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="">All Cities</option>
-                {uniqueCities.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-
-              <div className="md:col-span-2">
-                <div className="text-sm text-gray-600 mb-2">Facilities:</div>
-                <div className="flex flex-wrap gap-2">
-                  {facilities.map(facility => (
-                    <button
-                      key={facility}
-                      onClick={() => handleFilterChange('facilities', facility)}
-                      className={`flex items-center px-3 py-1 rounded-full text-sm transition-colors ${
-                        filters.facilities.includes(facility)
-                          ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
-                          : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-                      }`}
-                    >
-                      {getFacilityIcon(facility)}
-                      <span className="ml-1 capitalize">{facility}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filters */}
+        {showFilters && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select
+              value={filters.type}
+              onChange={(e) => handleFilterChange('type', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="">All Types</option>
+              <option value="Government">Government</option>
+              <option value="Private">Private</option>
+            </select>
+
+            <select
+              value={filters.city}
+              onChange={(e) => handleFilterChange('city', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="">All Cities</option>
+              {uniqueCities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+
+            <div className="md:col-span-2">
+              <div className="text-sm text-gray-600 mb-2">Facilities:</div>
+              <div className="flex flex-wrap gap-2">
+                {facilities.map(facility => (
+                  <button
+                    key={facility}
+                    onClick={() => handleFilterChange('facilities', facility)}
+                    className={`flex items-center px-3 py-1 rounded-full text-sm transition-colors ${
+                      filters.facilities.includes(facility)
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    {getFacilityIcon(facility)}
+                    <span className="ml-1 capitalize">{facility}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* College List */}
           <div className="lg:col-span-2">

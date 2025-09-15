@@ -12,7 +12,6 @@ import {
   ArrowRight,
   Settings,
   Bell,
-  Menu,
   X,
   Sparkles,
   ChevronDown,
@@ -26,7 +25,7 @@ const Dashboard = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -94,7 +93,7 @@ const Dashboard = () => {
     };
 
     fetchUserData();
-  }, [user]);
+  }, []);
 
   const generateRecommendations = (quizResult, user) => {
     const recs = [];
@@ -173,8 +172,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.settings-dropdown')) {
-        setSettingsOpen(false);
+      if (!event.target.closest('.profile-dropdown')) {
+        setProfileOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -182,7 +181,7 @@ const Dashboard = () => {
   }, []);
 
   const handleLogout = () => {
-    setSettingsOpen(false);
+    setProfileOpen(false);
     logout();
     navigate('/login');
   };
@@ -227,66 +226,73 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => window.location.reload()}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity mr-2"
+                className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                  <Sparkles className="w-6 h-6 text-white animate-pulse" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+                <span className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">Zariya</span>
               </button>
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 md:hidden"
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900 ml-2 md:ml-0">Dashboard</h1>
+              <div className="hidden md:block h-8 w-px bg-gray-300"></div>
+              <h1 className="text-3xl font-bold text-gray-900 hover:text-indigo-700 transition-colors cursor-pointer">
+                Dashboard
+              </h1>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-                <Bell className="h-5 w-5" />
-              </button>
-              <div className="relative settings-dropdown">
-                <button
-                  onClick={() => setSettingsOpen(!settingsOpen)}
-                  className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 flex items-center"
-                >
-                  <Settings className="h-5 w-5" />
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </button>
-                {settingsOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-                    <div className="py-1">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <div className="relative profile-dropdown">
+              <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center space-x-3 group cursor-pointer">
+                <div className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                   <span className="text-white font-medium text-sm">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700 hidden sm:block">
+                <span className="text-sm font-medium text-gray-700 hidden sm:block group-hover:text-indigo-600 transition-colors">
                   {user?.firstName} {user?.lastName}
                 </span>
-              </div>
+                <ChevronDown className="h-4 w-4 ml-1 group-hover:translate-y-1 transition-transform" />
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-10 animate-fade-in">
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {user?.firstName?.[0]}{user?.lastName?.[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
+                        <p className="text-xs text-gray-500">{user?.class}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="py-2">
+                    <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
+                    </button>
+                    <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

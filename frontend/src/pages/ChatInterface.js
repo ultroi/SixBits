@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 
-
 const ChatInterface = () => {
   const { user } = useAuth();
   const [threads, setThreads] = useState([]);
@@ -19,7 +18,7 @@ const ChatInterface = () => {
   const textareaRef = useRef(null);
   const navigate = useNavigate();
 
-  // Create userProfile from user data
+  // user profile
   const userProfile = {
     age: user?.age,
     gender: user?.gender,
@@ -30,38 +29,21 @@ const ChatInterface = () => {
 
   const quickReplies = userProfile.quizResults
     ? [
-      "Show me courses based on my quiz results",
-      "What colleges should I consider?",
-      "Help me create a study plan",
-      "Tell me about career opportunities"
-    ]
+        "Show me courses based on my quiz results",
+        "What colleges should I consider?",
+        "Help me create a study plan"
+      ]
     : [
-      "Take me to the aptitude quiz",
-      "Help me choose my stream",
-      "Show me nearby colleges",
-      "What skills should I learn?"
-    ];
+        "Take me to the aptitude quiz",
+        "Help me choose my stream",
+        "Show me nearby colleges"
+      ];
+
+  const [showQuickReplies, setShowQuickReplies] = useState(true);
 
   useEffect(() => {
-    const userName = user?.firstName || 'there';
-    const quizResults = JSON.parse(localStorage.getItem('quizResults') || 'null');
-    let initialMessage = `Hello ${userName}! I'm Zariya, your AI career counselor. `;
-
-    if (quizResults && quizResults.interests && quizResults.strengths) {
-      const interestsEntries = Object.entries(quizResults.interests);
-      const strengthsEntries = Object.entries(quizResults.strengths);
-
-      if (interestsEntries.length > 0 && strengthsEntries.length > 0) {
-        const topInterest = interestsEntries.sort(([, a], [, b]) => b - a)[0];
-        const topStrength = strengthsEntries.sort(([, a], [, b]) => b - a)[0];
-
-        initialMessage += `Based on your profile (${user?.class || 'student'}, interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}) and quiz results, I see you're strong in ${topStrength[0]} and interested in ${topInterest[0]}. How can I help you with your career planning today?`;
-      } else {
-        initialMessage += `I see you're in ${user?.class || 'school'} and interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}. Have you taken our aptitude quiz yet? It will help me give you more personalized recommendations.`;
-      }
-    } else {
-      initialMessage += `I see you're in ${user?.class || 'school'} and interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}. Have you taken our aptitude quiz yet? It will help me give you more personalized recommendations.`;
-    }
+    const welcomeMessageContent =
+      "**👋 Welcome to Zariya Career Counseling Platform**\n\nExplore educational pathways, discover suitable colleges, and plan your career journey with AI-powered guidance. Ask questions or use the quick prompts below to get started.";
 
     const initialThread = {
       id: Date.now().toString(),
@@ -69,7 +51,7 @@ const ChatInterface = () => {
       messages: [
         {
           id: 1,
-          content: initialMessage,
+          content: welcomeMessageContent,
           sender: 'bot',
           timestamp: new Date()
         }
@@ -78,7 +60,7 @@ const ChatInterface = () => {
     setThreads([initialThread]);
     setActiveThreadId(initialThread.id);
     setMessages(initialThread.messages);
-  }, [user?.firstName, user?.class, user?.academicInterests]);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,9 +69,6 @@ const ChatInterface = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Auth and navigation
-  // const navigate = useNavigate(); // Removed unused navigate
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -106,9 +85,9 @@ const ChatInterface = () => {
     setInput('');
     setIsLoading(true);
     setIsTyping(true);
+    setShowQuickReplies(false);
 
     try {
-      // Call the actual AI service
       const response = await chatService.sendMessage(input);
 
       const botMessage = {
@@ -123,10 +102,9 @@ const ChatInterface = () => {
     } catch (error) {
       console.error('Chat error:', error);
 
-      // Add error message from bot
       const errorMessage = {
         id: messages.length + 2,
-        content: `I'm sorry, I'm having trouble processing your request right now. Please try again.`,
+        content: `⚠️ Sorry, I’m having trouble right now. Please try again.`,
         sender: 'bot',
         timestamp: new Date(),
         status: 'error'
@@ -140,15 +118,8 @@ const ChatInterface = () => {
   };
 
   const createNewThread = () => {
-    const userName = user?.firstName || 'there';
-    const quizResults = JSON.parse(localStorage.getItem('quizResults') || 'null');
-    let welcomeMessage = `Hello ${userName}! Starting a new conversation. `;
-
-    if (quizResults) {
-      welcomeMessage += `I remember from your quiz that you're interested in ${user?.academicInterests ? user.academicInterests.join(', ') : 'various subjects'}. What would you like to discuss?`;
-    } else {
-      welcomeMessage += `How can I assist you with your career planning today?`;
-    }
+    const welcomeMessage =
+      "**👋 Welcome to Zariya Career Counseling Platform**\n\nAsk questions or use the quick prompts below to get started.";
 
     const newThread = {
       id: Date.now().toString(),
@@ -165,6 +136,7 @@ const ChatInterface = () => {
     setThreads(prev => [newThread, ...prev]);
     setActiveThreadId(newThread.id);
     setMessages(newThread.messages);
+    setShowQuickReplies(true);
   };
 
   const deleteThread = (threadId) => {
@@ -172,22 +144,18 @@ const ChatInterface = () => {
       toast.error('Cannot delete the last conversation');
       return;
     }
-
     const updatedThreads = threads.filter(t => t.id !== threadId);
     setThreads(updatedThreads);
-
     if (threadId === activeThreadId) {
       const newActiveThread = updatedThreads[0];
       setActiveThreadId(newActiveThread.id);
       setMessages(newActiveThread.messages);
     }
-
     toast.success('Conversation deleted');
   };
 
-  const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -197,135 +165,124 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
-              </button>
-              <div className="hidden md:block">
-                <h2 className="text-lg font-semibold text-gray-900">AI Career Counselor</h2>
-                <p className="text-sm text-gray-500">Get personalized career guidance</p>
-              </div>
+    <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col overflow-hidden font-sans">
+      {/* HEADER */}
+      <div className="fixed top-0 left-0 right-0 z-20 backdrop-blur-md bg-white/70 border-b border-gray-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 flex justify-between items-center h-14">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 group"
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Zariya
+            </h1>
+          </button>
 
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={createNewThread}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 text-white px-4 py-2 rounded-lg font-medium shadow-md flex items-center gap-2 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Chat</span>
+            </button>
+
+            {threads.length > 1 && (
               <button
-                onClick={createNewThread}
-                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                onClick={() => deleteThread(activeThreadId)}
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                <span>New Chat</span>
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
               </button>
-
-              {threads.length > 1 && (
-                <button
-                  onClick={() => deleteThread(activeThreadId)}
-                  className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete Chat</span>
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        {/* Chat History Selector */}
+      {/* BODY */}
+      <div className="flex-1 max-w-5xl mx-auto w-full flex flex-col mt-14 px-4 pb-4">
+        {/* Thread Selector */}
         {threads.length > 1 && (
-          <div className="mb-4 flex-shrink-0">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Recent Conversations</h3>
-            <div className="flex space-x-2 overflow-x-auto pb-2">
-              {threads.slice(0, 5).map(thread => (
-                <button
-                  key={thread.id}
-                  onClick={() => {
-                    setActiveThreadId(thread.id);
-                    setMessages(thread.messages);
-                  }}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${thread.id === activeThreadId
-                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{thread.title}</span>
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {threads.slice(0, 5).map((thread) => (
+              <button
+                key={thread.id}
+                onClick={() => {
+                  setActiveThreadId(thread.id);
+                  setMessages(thread.messages);
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
+                  thread.id === activeThreadId
+                    ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                {thread.title}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* Chat Messages */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 mb-4 relative">
-            <div className="h-[70vh] overflow-y-auto p-6 space-y-4 chat-scroll" style={{scrollBehavior: 'smooth'}}>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-              >
-                <div className={`max-w-lg ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
-                  <div className="flex items-end space-x-2">
-                    {message.sender === 'bot' && (
-                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
-                        <Sparkles className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-
+        {/* Messages */}
+        <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-200 relative">
+          <div className="h-[calc(100vh-230px)] overflow-y-auto p-6 space-y-5 chat-scroll">
+            {messages.map((message) => {
+              // Skip welcome message if user has sent a message
+              if (message.id === 1 && message.sender === 'bot' && messages.some(m => m.sender === 'user')) {
+                return null;
+              }
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.sender === 'user'
+                      ? 'justify-end'
+                      : message.id === 1
+                      ? 'justify-center'
+                      : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-lg ${
+                      message.id === 1 ? 'text-center' : ''
+                    }`}
+                  >
                     <div
-                      className={`rounded-2xl px-4 py-3 shadow-sm text-sm leading-relaxed ${message.sender === 'user'
-                          ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                          : 'bg-gray-50 text-gray-800 border border-gray-200'
-                        }`}
+                      className={`rounded-2xl px-4 py-3 shadow-sm transition-all ${
+                        message.sender === 'user'
+                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                          : message.id === 1
+                          ? 'bg-gradient-to-r from-indigo-100 to-purple-100 border border-indigo-200 text-gray-800 px-6 py-5 font-medium'
+                          : 'bg-gray-50 border border-gray-200 text-gray-800'
+                      }`}
                     >
-                      <div className="markdown-content">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
-                      </div>
-                      <div className="flex items-center justify-end mt-2">
-                        <span className={`text-xs ${message.sender === 'user' ? 'text-indigo-100' : 'text-gray-500'
-                          }`}>
-                          {formatTime(message.timestamp)}
-                        </span>
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <div className="flex justify-end mt-2 text-xs text-gray-400">
+                        {formatTime(message.timestamp)}
                       </div>
                     </div>
-
-                    {message.sender === 'user' && (
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
-                        <span className="text-white font-bold text-sm">{user.firstName && user.firstName.length > 0 ? user.firstName[0] : 'U'}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {isTyping && (
-              <div className="flex justify-start animate-fadeIn">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="bg-gray-50 rounded-2xl px-4 py-3 shadow-sm border border-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">Zariya is thinking</span>
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-600 flex gap-2 items-center">
+                  <span>Zariya is thinking</span>
+                  <span className="flex gap-1">
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce delay-150"></span>
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce delay-300"></span>
+                  </span>
                 </div>
               </div>
             )}
@@ -334,192 +291,57 @@ const ChatInterface = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-3 flex-shrink-0">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Questions</h3>
-          <div className="flex flex-wrap gap-2">
-            {quickReplies.map((reply, idx) => (
-              <button
-                key={idx}
-                onClick={() => setInput(reply)}
-                className="bg-white hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border border-gray-200 hover:border-indigo-200 text-left whitespace-nowrap"
-              >
-                {reply}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl shadow-sm border border-indigo-200 p-4 flex-shrink-0">
-          <div className="flex items-end space-x-3">
-            <div className="flex-1">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message here..."
-                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                rows="1"
-                style={{ minHeight: '48px', maxHeight: '120px' }}
-              />
+        {/* Quick Replies */}
+        {showQuickReplies && (
+          <div className="mt-3">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Questions</h3>
+            <div className="flex flex-wrap gap-2">
+              {quickReplies.map((reply, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setInput(reply);
+                    setTimeout(() => handleSend(), 10);
+                  }}
+                  className="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition-all shadow-sm"
+                >
+                  {reply}
+                </button>
+              ))}
             </div>
-
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className={`p-3 rounded-lg transition-all duration-200 ${!input.trim() || isLoading
-                  ? 'bg-gray-300 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shadow-lg hover:shadow-xl transform hover:scale-105'
-                }`}
-            >
-              <Send className="w-5 h-5 text-white" />
-            </button>
           </div>
+        )}
 
-          <p className="text-xs text-center text-gray-500 mt-3">
-            Zariya AI provides personalized career guidance. Your conversations are private and secure.
-          </p>
+        {/* Input */}
+        <div className="mt-4 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-xl shadow-md p-3 flex items-end gap-3 sticky bottom-0">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+                textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+              }
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Type your message..."
+            className="flex-1 resize-none bg-transparent border-0 focus:ring-0 outline-none px-2 py-2 text-sm max-h-48 overflow-hidden"
+            rows="1"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            className={`p-3 rounded-lg ${
+              !input.trim() || isLoading
+                ? 'bg-gray-200 cursor-not-allowed'
+                : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 shadow-md text-white'
+            }`}
+          >
+            <Send className="w-5 h-5" />
+          </button>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .chat-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: #6366F1 #F1F5F9;
-        }
-
-        .chat-scroll::-webkit-scrollbar {
-          width: 12px;
-        }
-
-        .chat-scroll::-webkit-scrollbar-track {
-          background: #F1F5F9;
-          border-radius: 6px;
-          margin: 4px;
-        }
-
-        .chat-scroll::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #6366F1, #8B5CF6);
-          border-radius: 6px;
-          border: 2px solid #F1F5F9;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-scroll::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #4F46E5, #7C3AED);
-          transform: scale(1.1);
-        }
-
-        .chat-scroll::-webkit-scrollbar-thumb:active {
-          background: linear-gradient(135deg, #3730A3, #581C87);
-        }
-
-        .chat-scroll::-webkit-scrollbar-corner {
-          background: #F1F5F9;
-        }
-
-        .markdown-content {
-          line-height: 1.6;
-        }
-
-        .markdown-content p {
-          margin-bottom: 0.5rem;
-        }
-
-        .markdown-content p:last-child {
-          margin-bottom: 0;
-        }
-
-        .markdown-content strong,
-        .markdown-content b {
-          font-weight: 600;
-        }
-
-        .markdown-content ul,
-        .markdown-content ol {
-          margin: 0.5rem 0;
-          padding-left: 1.5rem;
-        }
-
-        .markdown-content li {
-          margin-bottom: 0.25rem;
-        }
-
-        .markdown-content li:last-child {
-          margin-bottom: 0;
-        }
-
-        .markdown-content h1,
-        .markdown-content h2,
-        .markdown-content h3,
-        .markdown-content h4,
-        .markdown-content h5,
-        .markdown-content h6 {
-          font-weight: 600;
-          margin: 0.5rem 0 0.25rem 0;
-          line-height: 1.3;
-        }
-
-        .markdown-content h1 {
-          font-size: 1.1em;
-        }
-
-        .markdown-content h2 {
-          font-size: 1em;
-        }
-
-        .markdown-content h3 {
-          font-size: 0.95em;
-        }
-
-        .markdown-content blockquote {
-          border-left: 3px solid #6366F1;
-          padding-left: 0.75rem;
-          margin: 0.5rem 0;
-          font-style: italic;
-          color: #4B5563;
-        }
-
-        .markdown-content code {
-          background-color: rgba(99, 102, 241, 0.1);
-          padding: 0.125rem 0.25rem;
-          border-radius: 0.25rem;
-          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-          font-size: 0.875em;
-        }
-
-        .markdown-content pre {
-          background-color: #F8FAFC;
-          border: 1px solid #E2E8F0;
-          border-radius: 0.375rem;
-          padding: 0.75rem;
-          margin: 0.5rem 0;
-          overflow-x: auto;
-          font-size: 0.875em;
-        }
-
-        .markdown-content pre code {
-          background-color: transparent;
-          padding: 0;
-        }
-      `}</style>
     </div>
   );
 };
