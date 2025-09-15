@@ -2,6 +2,17 @@
   "name": "zariya",
   "version": "1.0.0",
   "description": "Zariya Career Counseling Platform",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.6.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "morgan": "^1.10.0",
+    "@google/generative-ai": "^0.1.3",
+    "xlsx": "^0.18.5"
+  },
   "scripts": {
     "start:frontend": "cd frontend && npm start",
     "start:backend": "cd backend && npm run dev",
