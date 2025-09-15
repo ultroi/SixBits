@@ -6,6 +6,9 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+// Disable Mongoose buffering globally to prevent timeout errors
+mongoose.set('bufferCommands', false);
+
 // Import models
 const User = require('../backend/models/User');
 const Chat = require('../backend/models/Chat');
@@ -59,7 +62,8 @@ async function connectToDatabase() {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
-      bufferCommands: false
+      bufferCommands: false,
+      bufferMaxEntries: 0
     });
     isConnected = true;
     console.log('Connected to MongoDB');
