@@ -59,16 +59,18 @@ async function connectToDatabase() {
   }
 }
 
-// Export the Express app as a Vercel serverless function
-module.exports = async (req, res) => {
+// Middleware to connect to DB
+app.use(async (req, res, next) => {
   try {
     await connectToDatabase();
-    return app(req, res);
+    next();
   } catch (error) {
-    console.error('Serverless function error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Database connection error' });
   }
-};
+});
+
+// Export the Express app as a Vercel serverless function
+module.exports = app;
 
 // For local development
 if (require.main === module) {
