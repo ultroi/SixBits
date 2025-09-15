@@ -32,12 +32,12 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/chat', chatRoutes);
-app.use('/quiz', quizRoutes);
-app.use('/colleges', collegeRoutes);
-app.use('/courses', courseRoutes);
-app.use('/timeline', timelineRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/colleges', collegeRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/timeline', timelineRoutes);
 
 // Connect to MongoDB
 let isConnected = false;
