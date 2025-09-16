@@ -16,7 +16,8 @@ if (missing.length) {
 // Disable Mongoose buffering globally to prevent long timeouts when disconnected
 mongoose.set('bufferCommands', false);
 
-// Import models (kept for potential schema registration; values unused directly here)
+// Register schemas with the primary mongoose instance (avoid duplicate mongoose copies)
+// Using require side-effects to attach to default connection.
 require('../backend/models/User');
 require('../backend/models/Chat');
 require('../backend/models/College');

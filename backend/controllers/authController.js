@@ -42,39 +42,36 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    // Check if user exists
-    const user = await User.findOne({ email });
-    
+
+    // Diagnostic logging (temporary) to understand buffering state
+    if (process.env.DEBUG_DB === '1') {
+      const mongoose = require('mongoose');
+      console.log('[AuthLogin] mongoose readyState:', mongoose.connection.readyState);
+      console.log('[AuthLogin] models registered:', Object.keys(mongoose.models));
+    }
+
+    const user = await User.findOne({ email }).lean(false); // ensure full doc for comparePassword
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    
-    // Check if password is correct
+
     const isMatch = await user.comparePassword(password);
-    
+
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    
-    // Create JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d'
-    });
-    
-    // User object to return (without password)
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
     const userToReturn = {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email
     };
-    
-    res.status(200).json({
-      message: 'Login successful',
-      token,
-      user: userToReturn
-    });
+
+    res.status(200).json({ message: 'Login successful', token, user: userToReturn });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
