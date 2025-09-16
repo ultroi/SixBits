@@ -18,20 +18,21 @@ mongoose.set('bufferCommands', false);
 
 // Register schemas with the primary mongoose instance (avoid duplicate mongoose copies)
 // Using require side-effects to attach to default connection.
-require('../backend/models/User');
-require('../backend/models/Chat');
-require('../backend/models/College');
-require('../backend/models/Course');
-require('../backend/models/Quiz');
-require('../backend/models/Timeline');
+// Register models from the top-level backend directory to ensure a single source of truth
+require('../../backend/models/User');
+require('../../backend/models/Chat');
+require('../../backend/models/College');
+require('../../backend/models/Course');
+require('../../backend/models/Quiz');
+require('../../backend/models/Timeline');
 
 // Import routes
-const authRoutes = require('../backend/routes/auth');
-const chatRoutes = require('../backend/routes/chat');
-const quizRoutes = require('../backend/routes/quiz');
-const collegeRoutes = require('../backend/routes/college');
-const courseRoutes = require('../backend/routes/course');
-const timelineRoutes = require('../backend/routes/timeline');
+const authRoutes = require('../../backend/routes/auth');
+const chatRoutes = require('../../backend/routes/chat');
+const quizRoutes = require('../../backend/routes/quiz');
+const collegeRoutes = require('../../backend/routes/college');
+const courseRoutes = require('../../backend/routes/course');
+const timelineRoutes = require('../../backend/routes/timeline');
 
 const app = express();
 

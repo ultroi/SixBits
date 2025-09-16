@@ -64,6 +64,6 @@ const collegeSchema = new mongoose.Schema(
 // Index for location-based queries
 collegeSchema.index({ 'location.coordinates': '2dsphere' });
 
-const College = mongoose.model('College', collegeSchema);
+const College = mongoose.models.College || mongoose.model('College', collegeSchema);
 
 module.exports = College;
