@@ -12,7 +12,7 @@
       "src": "frontend/api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["backend/**", "node_modules/**", "package.json"],
+        "includeFiles": ["backend/**"],
         "nodeVersion": "22.x"
       }
     }
