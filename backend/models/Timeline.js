@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = global.mongoose;
 
 const timelineSchema = new mongoose.Schema(
   {

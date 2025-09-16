@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = global.mongoose;
 
 const messageSchema = new mongoose.Schema({
   content: {

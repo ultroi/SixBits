@@ -16,6 +16,10 @@ if (missing.length) {
 // Disable Mongoose buffering globally to prevent long timeouts when disconnected
 mongoose.set('bufferCommands', false);
 
+// Set global mongoose and bcrypt for models
+global.mongoose = mongoose;
+global.bcrypt = require('bcryptjs');
+
 try {
   require('../../backend/models/User');
   require('../../backend/models/Chat');

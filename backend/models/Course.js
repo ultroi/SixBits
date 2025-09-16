@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = global.mongoose;
 
 const courseSchema = new mongoose.Schema(
   {
