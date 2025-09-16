@@ -1,12 +1,3 @@
-// Run setup script for Vercel deployment
-if (process.env.VERCEL) {
-  try {
-    require('./setup');
-  } catch (err) {
-    console.error('Setup script error:', err);
-  }
-}
-
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -25,9 +16,6 @@ if (missing.length) {
 // Disable Mongoose buffering globally to prevent long timeouts when disconnected
 mongoose.set('bufferCommands', false);
 
-// Register schemas with the primary mongoose instance (avoid duplicate mongoose copies)
-// Using require side-effects to attach to default connection.
-// Register models from the top-level backend directory to ensure a single source of truth
 try {
   require('../../backend/models/User');
   require('../../backend/models/Chat');
@@ -120,12 +108,11 @@ app.use('/api/timeline', timelineRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    dbState: mongoose.connection.readyState, // 0=disconnected,1=connected,2=connecting,3=disconnecting
+    dbState: mongoose.connection.readyState,
     uptime: process.uptime()
   });
 });
 
-// Optional deeper DB diagnostics (enable by setting DEBUG_DB=1). Avoid leaking secrets.
 if (process.env.DEBUG_DB === '1') {
   app.get('/api/health/db', (req, res) => {
     const conn = mongoose.connection;
