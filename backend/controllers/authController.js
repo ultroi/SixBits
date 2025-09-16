@@ -28,6 +28,7 @@ function getUserModel() {
 // Register a new user
 exports.register = async (req, res) => {
   try {
+    const User = getUserModel();
     const { firstName, lastName, email, password, age, gender, class: userClass, academicInterests, state, city } = req.body;
     
     // Check if user already exists
@@ -114,6 +115,7 @@ exports.login = async (req, res) => {
 // Get current user
 exports.getCurrentUser = async (req, res) => {
   try {
+    const User = getUserModel();
     const user = await User.findById(req.user._id).select('-password');
     res.status(200).json({ user });
   } catch (error) {
