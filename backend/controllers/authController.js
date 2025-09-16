@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
+const jwt = global.jwt;
+const mongoose = global.mongoose;
 
 // Helper to get User model bound to the active mongoose connection
 function getUserModel() {
