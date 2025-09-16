@@ -26,6 +26,7 @@
       "dest": "/frontend/$1"
     }
   ],
+  "installCommand": "npm --prefix frontend/api install",
   "env": {
     "NODE_ENV": "production"
   }

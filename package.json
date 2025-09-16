@@ -15,6 +15,7 @@
   },
   "scripts": {
     "postinstall": "npm --prefix frontend/api install",
+    "vercel-build": "npm --prefix frontend/api install && cd frontend && npm run build",
     "start:frontend": "cd frontend && npm start",
     "start:backend": "cd backend && npm run dev",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",

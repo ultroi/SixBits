@@ -43,6 +43,11 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Basic input validation
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     // Diagnostic logging (temporary) to understand buffering state
     if (process.env.DEBUG_DB === '1') {
       const mongoose = require('mongoose');
@@ -50,16 +55,19 @@ exports.login = async (req, res) => {
       console.log('[AuthLogin] models registered:', Object.keys(mongoose.models));
     }
 
-    const user = await User.findOne({ email }).lean(false); // ensure full doc for comparePassword
+    const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
+    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
 
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not set in environment');
+      return res.status(500).json({ message: 'Server configuration error' });
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
