@@ -12,7 +12,7 @@
       "src": "frontend/api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["backend/**"]
+        "includeFiles": ["backend/**", "node_modules/**"]
       }
     }
   ],
