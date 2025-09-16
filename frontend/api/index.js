@@ -1,3 +1,12 @@
+// Run setup script for Vercel deployment
+if (process.env.VERCEL) {
+  try {
+    require('./setup');
+  } catch (err) {
+    console.error('Setup script error:', err);
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -19,12 +28,23 @@ mongoose.set('bufferCommands', false);
 // Register schemas with the primary mongoose instance (avoid duplicate mongoose copies)
 // Using require side-effects to attach to default connection.
 // Register models from the top-level backend directory to ensure a single source of truth
-require('../../backend/models/User');
-require('../../backend/models/Chat');
-require('../../backend/models/College');
-require('../../backend/models/Course');
-require('../../backend/models/Quiz');
-require('../../backend/models/Timeline');
+try {
+  require('../../backend/models/User');
+  require('../../backend/models/Chat');
+  require('../../backend/models/College');
+  require('../../backend/models/Course');
+  require('../../backend/models/Quiz');
+  require('../../backend/models/Timeline');
+  console.log('[Models] Successfully loaded all models');
+} catch (err) {
+  console.error('[Models] Failed to load models:', err.message);
+  if (err.code === 'MODULE_NOT_FOUND') {
+    console.error('[Models] This could be due to missing dependencies in your deployment.');
+    console.error('[Models] Make sure mongoose and other required packages are installed.');
+    console.error('[Models] Path resolution issue:', err.path || 'unknown');
+  }
+  throw err; // Rethrow to ensure the app doesn't start with missing models
+}
 
 // Import routes
 const authRoutes = require('../../backend/routes/auth');

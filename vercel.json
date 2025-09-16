@@ -12,7 +12,8 @@
       "src": "frontend/api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["backend/**", "node_modules/**"]
+        "includeFiles": ["backend/**", "node_modules/**", "package.json"],
+        "nodeVersion": "18.x"
       }
     }
   ],
@@ -26,7 +27,7 @@
       "dest": "/frontend/$1"
     }
   ],
-  "installCommand": "npm install",
+  "installCommand": "npm install && npm run install:all",
   "env": {
     "NODE_ENV": "production"
   }

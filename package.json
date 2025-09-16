@@ -19,7 +19,7 @@
     "start:frontend": "cd frontend && npm start",
     "start:backend": "cd backend && npm run dev",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../frontend/api && npm install",
     "build": "cd frontend && npm run build",
     "vercel-deploy": "vercel --prod",
     "dev": "npm run start",
