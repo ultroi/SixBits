@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/index.js": {
-      "includeFiles": "../../backend/**/*,../../node_modules/**/*"
+      "includeFiles": ["../../backend/**/*", "../../node_modules/**/*", "node_modules/**/*"]
     }
   }
 }
