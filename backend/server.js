@@ -7,6 +7,16 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+// Prevent mongoose from buffering model operations on disconnected instances
+mongoose.set('bufferCommands', false);
+
+// Connection event listeners for debugging
+mongoose.connection.on('connecting', () => console.log('[Frontend Backend DB] connecting...'));
+mongoose.connection.on('connected', () => console.log('[Frontend Backend DB] connected'));
+mongoose.connection.on('reconnected', () => console.log('[Frontend Backend DB] reconnected'));
+mongoose.connection.on('disconnected', () => console.log('[Frontend Backend DB] disconnected'));
+mongoose.connection.on('error', (err) => console.error('[Frontend Backend DB] error event:', err && err.message));
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
@@ -45,13 +55,9 @@ async function startServer() {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       dbName: 'Zariya',
-      // Fail fast if server selection takes too long
       serverSelectionTimeoutMS: 5000,
-      // Control socket timeouts
       socketTimeoutMS: 45000,
-      // Controls initial connect timeout
       connectTimeoutMS: 10000,
-      // Disable mongoose buffering of model operations when not connected
       bufferCommands: false
     });
     
@@ -71,7 +77,6 @@ async function startServer() {
   } catch (err) {
     console.error('Server startup error:');
     console.error(err);
-    // Exit process when DB connection fails at startup to avoid buffered operations
     process.exit(1);
   }
 }

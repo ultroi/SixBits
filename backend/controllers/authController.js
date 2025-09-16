@@ -1,5 +1,29 @@
-const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+
+// Helper to get User model bound to the active mongoose connection
+function getUserModel() {
+  try {
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      // If model already registered on this connection, return it
+      if (mongoose.connection.models && mongoose.connection.models.User) {
+        return mongoose.connection.model('User');
+      }
+      // Otherwise require the schema and compile on this connection
+      const userSchema = require('../models/User').schema || require('../models/User');
+      return mongoose.connection.model('User', userSchema);
+    }
+  } catch (err) {
+    console.error('[FrontendBackend] error getting User model from active connection:', err && err.message);
+  }
+
+  // Fallback to module-level require (may be bound to another mongoose instance)
+  try {
+    return require('../models/User');
+  } catch (e) {
+    throw e;
+  }
+}
 
 // Register a new user
 exports.register = async (req, res) => {
@@ -42,44 +66,45 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Basic input validation
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
-    // Diagnostic logging (temporary) to understand buffering state
+    
+    // Check if user exists
+    const User = getUserModel();
     if (process.env.DEBUG_DB === '1') {
-      const mongoose = require('mongoose');
-      console.log('[AuthLogin] mongoose readyState:', mongoose.connection.readyState);
-      console.log('[AuthLogin] models registered:', Object.keys(mongoose.models));
+      console.log('[FrontendBackend Auth] mongoose readyState:', mongoose.connection.readyState);
+      console.log('[FrontendBackend Auth] using User model from connection:', User && User.db && User.db.name);
     }
 
     const user = await User.findOne({ email });
-
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
-
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+    
+    // Check if password is correct
     const isMatch = await user.comparePassword(password);
-
+    
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not set in environment');
-      return res.status(500).json({ message: 'Server configuration error' });
-    }
-
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
+    
+    // Create JWT token
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d'
+    });
+    
+    // User object to return (without password)
     const userToReturn = {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email
     };
-
-    res.status(200).json({ message: 'Login successful', token, user: userToReturn });
+    
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: userToReturn
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
