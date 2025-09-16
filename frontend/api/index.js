@@ -21,6 +21,7 @@ global.mongoose = mongoose;
 global.bcrypt = require('bcryptjs');
 global.express = express;
 global.jwt = require('jsonwebtoken');
+global.genAI = require('@google/generative-ai');
 
 try {
   require('../../backend/models/User');

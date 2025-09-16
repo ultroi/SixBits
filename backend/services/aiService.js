@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = global.genAI;
 const Chat = require('../models/Chat');
 
 // Initialize Gemini API
