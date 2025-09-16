@@ -1,4 +1,4 @@
-const express = require('express');
+const express = global.express;
 const router = express.Router();
 const quizController = require('../controllers/quizController');
 

@@ -1,4 +1,4 @@
-const express = require('express');
+const express = global.express;
 const router = express.Router();
 const chatController = require('../controllers/chatController');
 const auth = require('../middleware/auth');
