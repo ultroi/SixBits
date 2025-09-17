@@ -23,12 +23,8 @@
       "dest": "/frontend/api/index.js"
     },
     {
-      "src": "\/static\/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "\/(.*)",
-      "dest": "/index.html"
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
     }
   ],
   "installCommand": "npm install && npm run install:all",
