@@ -148,16 +148,20 @@ const formatAIResponse = (response) => {
 
   // Step 2: Fix markdown formatting issues
   formatted = formatted
-    .replace(/\*{4,}/g, '**')                    // Fix excessive asterisks
-    .replace(/\*\s*\*\s*/g, '**')               // Fix spaced asterisks
+    .replace(/\*{4,}/g, '**')                    // Collapse 4+ asterisks to bold
+    .replace(/\*{3}(?=\d+\.)/g, '')            // Remove triple asterisks directly before numbered lists (e.g., ****1. -> **1.)
+    .replace(/\*\s*\*\s*/g, '**')             // Fix spaced asterisks
     .replace(/\*\*\s*(.*?)\s*\*\*/g, '**$1**')  // Clean bold formatting
-    .replace(/\*([^*\n]+)\*/g, '*$1*')          // Clean italic formatting
-    .replace(/(^|\s)\*(?=\s|$)/g, '$1')         // Remove stray asterisks
+    .replace(/\*([^*\n]+)\*/g, '*$1*')         // Clean italic formatting
+    .replace(/(^|\s)\*(?=\s|$)/g, '$1')        // Remove stray single asterisks
+    .replace(/\*{2,}(?=\d+\.)/g, '')           // Remove leftover bold markers immediately before numbered lists
+    .replace(/\*{2,}(?=\s*-\s)/g, '')          // Remove leftover bold markers immediately before bullets
 
   // Step 3: Normalize bullet points and lists
   formatted = formatted
     .replace(/^\s*[\*•]\s+/gm, '- ')           // Convert * and • to -
     .replace(/^\s*[-]\s*/gm, '- ')             // Ensure consistent bullet spacing
+    .replace(/(^|\n)\s*\*{1,}\s*(\d+)\.(\s|$)/g, '$1$2. ') // Remove stray asterisks before numbered lists
     .replace(/^(\s*\d+)\.(\S)/gm, '$1. $2')    // Fix numbered list spacing
     .replace(/^(#{1,6})([^\s#])/gm, '$1 $2')   // Fix header spacing
 
@@ -219,31 +223,8 @@ const extractSections = (text) => {
 const buildStructuredResponse = (sections, originalText) => {
   const parts = [];
   
-  // 1. TL;DR or opening statement
-  if (sections.tldr) {
-    const cleanTldr = sections.tldr
-      .split(/\n/)
-      .map(line => line.trim())
-      .filter(Boolean)
-      .slice(0, 2)
-      .join(' ')
-      .replace(/^[-\*\d\.]+\s*/, '');
-    
-    if (cleanTldr.length > 10) {
-      parts.push(`**TL;DR:** ${cleanTldr}`);
-      parts.push(''); // Add spacing
-    }
-  } else {
-    // Extract first meaningful sentence as TL;DR
-    const sentences = originalText.split(/[.!?]+/).filter(s => s.trim().length > 20);
-    if (sentences.length > 0) {
-      const firstSentence = sentences[0].trim().replace(/^[-\*\d\.]+\s*/, '');
-      if (firstSentence.length > 10) {
-        parts.push(`**TL;DR:** ${firstSentence}.`);
-        parts.push(''); // Add spacing
-      }
-    }
-  }
+  // 1. Opening statement
+  // Removed TL;DR section
 
   // 2. Key Points
   if (sections.keyPoints) {
@@ -553,7 +534,7 @@ MANDATORY RESPONSE STRUCTURE:
 4. End with a specific question to continue the conversation
 
 FORMATTING EXAMPLES:
-**Hi [Name]! TL;DR:** Brief summary of your advice.
+**Hi [Name]!** Brief summary of your advice.
 
 **Key Points:**
 - First important point with specific details
