@@ -98,35 +98,29 @@ const formatChatHistory = (messages) => {
   }));
 };
 
-// Post-process AI response for better formatting and conciseness
+// Post-process AI response for better formatting and conciseness.
+// Produces a predictable, short structure to improve readability and downstream rendering:
+// TL;DR -> Key Points (bullets) -> Next Steps (numbered) -> Resources (optional) -> Clarifying question
+// This keeps the voice concise and makes it easier for the frontend to present replies.
 const formatAIResponse = (response) => {
   let formatted = response ? response.toString().trim() : '';
 
-  // Normalize line endings and collapse excessive blank lines
+  // Basic normalization
   formatted = formatted.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
 
-  // Remove common markdown artefacts produced by model (or duplicated markers)
-  // 1) Remove isolated asterisks surrounded by whitespace (or asterisks used as stray separators)
+  // Remove stray markdown artefacts
   formatted = formatted.replace(/(^|\s)\*(?=\s|$)/g, '$1');
-
-  // 2) Collapse consecutive asterisks with spaces between them ("* *" -> "**") then limit runs to max 2
   formatted = formatted.replace(/\*\s+\*/g, '**');
   formatted = formatted.replace(/\*{3,}/g, '**');
-
-  // 3) Clean up bold markers so there's no extra spaces inside: **  text  ** -> **text**
   formatted = formatted.replace(/\*\*\s*(.*?)\s*\*\*/g, '**$1**');
 
-  // Convert star bullets to dash bullets for consistency and ensure a single space after bullet
+  // Normalize bullets and lists
   formatted = formatted.replace(/^\s*\*\s+/gm, '- ');
-  formatted = formatted.replace(/^-\s*/gm, '- ');
-
-  // Ensure proper space after headings (e.g., "##Heading" -> "## Heading")
+  formatted = formatted.replace(/^\s*-\s*/gm, '- ');
   formatted = formatted.replace(/^(#{1,6})([^\s#])/gm, '$1 $2');
-
-  // Ensure numbered lists have a space after the dot ("1.Option" -> "1. Option")
   formatted = formatted.replace(/^(\s*\d+)\.(\S)/gm, '$1. $2');
 
-  // Remove unnecessary filler phrases that make replies verbose
+  // Remove common filler phrases to keep responses precise
   const fillerPhrases = [
     /\bWell,?\s*(to be honest|let me think|you know)\b/gi,
     /\bI would say that\b/gi,
@@ -135,30 +129,102 @@ const formatAIResponse = (response) => {
     /\bActually\b/gi,
     /\bSo,?\b/gi,
     /\bAnyway,?\b/gi,
-    /\bAs an? (AI|assistant)\b/gi
+    /\bAs an? (AI|assistant)\b/gi,
+    /\bSure\b/gi
   ];
   fillerPhrases.forEach(phrase => { formatted = formatted.replace(phrase, ''); });
 
-  // Trim repeated spaces
+  // Collapse excessive whitespace
   formatted = formatted.replace(/[ \t]{2,}/g, ' ');
 
-  // Ensure the response starts with a capital letter or a markdown element
-  const firstNonSpace = formatted.trim().charAt(0) || '';
-  if (firstNonSpace && !firstNonSpace.match(/[A-Z#\-*\[]/)) {
-    formatted = formatted.trim();
-    formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  // Ensure the first visible character is uppercase or a markdown token
+  const trimmed = formatted.trim();
+  if (trimmed && !trimmed.charAt(0).match(/[A-Z#\-\*\[]/)) {
+    formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  } else {
+    formatted = trimmed;
   }
 
-  // Limit response length to keep replies concise (approximate by words)
-  const words = formatted.split(/\s+/).filter(Boolean);
-  if (words.length > 450) {
-    formatted = words.slice(0, 420).join(' ') + '\n\n...';
+  // If the model already returned a structured reply, try to extract canonical sections.
+  // We'll search for common headings and normalize them.
+  const sectionPatterns = [
+    { key: 'tldr', regex: /^(?:tl;dr|summary|TL;DR)[:\-]?\s*(.+)/im },
+    { key: 'keyPoints', regex: /(?:key points|highlights|what to know)[:\-]?\s*([\s\S]*?)(?:\n{1,2}(?:next steps|actions|what to do)|$)/im },
+    { key: 'nextSteps', regex: /(?:next steps|actions|what to do)[:\-]?\s*([\s\S]*?)(?:\n{1,2}(?:resources|links|references)|$)/im },
+    { key: 'resources', regex: /(?:resources|links|references)[:\-]?\s*([\s\S]*?)$/im }
+  ];
+
+  const sections = {};
+  sectionPatterns.forEach(p => {
+    const m = formatted.match(p.regex);
+    if (m && m[1]) {
+      sections[p.key] = m[1].trim();
+    }
+  });
+
+  // Build a consistent, concise structure from either parsed sections or fallback parsing.
+  const buildBulletList = (text) => {
+    if (!text) return null;
+    // Split into lines and keep the most relevant 6 bullets
+    const lines = text.split(/\n+/).map(l => l.replace(/^\s*[-\*\d\.\)]+\s*/, '').trim()).filter(Boolean);
+    return lines.slice(0, 6);
+  };
+
+  const buildNumberedList = (text) => {
+    if (!text) return null;
+    const lines = text.split(/\n+/).map(l => l.replace(/^\s*[-\*\d\.\)]+\s*/, '').trim()).filter(Boolean);
+    return lines.slice(0, 5);
+  };
+
+  const tldr = sections.tldr || (formatted.split(/\n\n/)[0] || '');
+  const keyPoints = sections.keyPoints ? buildBulletList(sections.keyPoints) : buildBulletList(formatted);
+  const nextSteps = sections.nextSteps ? buildNumberedList(sections.nextSteps) : null;
+  const resources = sections.resources ? buildBulletList(sections.resources) : null;
+
+  // Compose final concise markdown output
+  const parts = [];
+
+  if (tldr) {
+    const oneLine = tldr.split(/\n/).map(s => s.trim()).filter(Boolean).slice(0, 2).join(' ');
+    parts.push(`**TL;DR:** ${oneLine}`);
   }
 
-  // Final tidy: remove leading/trailing blank lines and ensure single trailing newline
-  formatted = formatted.replace(/^\s+|\s+$/g, '');
+  if (keyPoints && keyPoints.length) {
+    parts.push('\n**Key points:**');
+    keyPoints.forEach(bp => parts.push(`- ${bp}`));
+  }
 
-  return formatted;
+  if (nextSteps && nextSteps.length) {
+    parts.push('\n**Next steps:**');
+    nextSteps.forEach((step, idx) => parts.push(`${idx + 1}. ${step}`));
+  }
+
+  if (resources && resources.length) {
+    parts.push('\n**Resources:**');
+    resources.forEach(r => parts.push(`- ${r}`));
+  }
+
+  // If nothing parsed, fall back to a short cleaned paragraph (limit ~150 words)
+  if (parts.length === 0) {
+    const words = formatted.split(/\s+/).filter(Boolean);
+    const limited = words.length > 200 ? words.slice(0, 180).join(' ') + '...' : formatted;
+    // Force one-paragraph answer
+    const short = limited.split(/\n+/).map(l => l.trim()).filter(Boolean).slice(0, 6).join(' ');
+    parts.push(short);
+  }
+
+  // Add a clarifying question prompt at the end if the model didn't include one
+  const lastPart = parts[parts.length - 1] || '';
+  if (!/\?\s*$/.test(lastPart)) {
+    parts.push('\n**Clarifying question:** Is there anything specific you want me to focus on?');
+  }
+
+  let result = parts.join('\n');
+
+  // Final cleanup: remove duplicated blank lines and trim
+  result = result.replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+
+  return result;
 };
 
 

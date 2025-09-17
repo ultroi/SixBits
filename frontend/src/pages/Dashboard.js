@@ -26,8 +26,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const { logout, user } = useAuth();
-  const { updateUser } = useAuth();
+  const { logout, user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -97,7 +96,7 @@ const Dashboard = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [updateUser]);
 
   const generateRecommendations = (quizResult, user) => {
     const recs = [];
