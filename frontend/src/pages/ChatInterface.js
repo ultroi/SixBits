@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const ChatInterface = () => {
   const { user } = useAuth();
@@ -261,7 +262,48 @@ const ChatInterface = () => {
                           : 'bg-gray-50 border border-gray-200 text-gray-800'
                       }`}
                     >
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          // Custom styling for headings
+                          h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-4 text-indigo-700">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-semibold mb-2 mt-3 text-indigo-600">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-medium mb-1 mt-2 text-indigo-500">{children}</h3>,
+                          
+                          // Custom styling for paragraphs
+                          p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+                          
+                          // Custom styling for lists
+                          ul: ({ children }) => <ul className="mb-2 ml-4 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="mb-2 ml-4 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
+                          
+                          // Custom styling for strong/bold
+                          strong: ({ children }) => <strong className="font-bold text-indigo-700">{children}</strong>,
+                          
+                          // Custom styling for emphasis/italic
+                          em: ({ children }) => <em className="italic text-indigo-600">{children}</em>,
+                          
+                          // Custom styling for code
+                          code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                          
+                          // Custom styling for code blocks
+                          pre: ({ children }) => <pre className="bg-gray-100 p-3 rounded-lg mb-2 overflow-x-auto text-xs">{children}</pre>,
+                          
+                          // Custom styling for blockquotes
+                          blockquote: ({ children }) => <blockquote className="border-l-4 border-indigo-300 pl-4 italic text-gray-600 mb-2">{children}</blockquote>,
+                          
+                          // Custom styling for links
+                          a: ({ children, href }) => <a href={href} className="text-indigo-600 hover:text-indigo-800 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                          
+                          // Custom styling for tables
+                          table: ({ children }) => <div className="overflow-x-auto mb-2"><table className="min-w-full border-collapse border border-gray-300">{children}</table></div>,
+                          th: ({ children }) => <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-semibold text-left">{children}</th>,
+                          td: ({ children }) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
                       <div className="flex justify-end mt-2 text-xs text-gray-400">
                         {formatTime(message.timestamp)}
                       </div>
