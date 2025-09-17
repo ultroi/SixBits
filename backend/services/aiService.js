@@ -9,7 +9,7 @@ const model = genAI.getGenerativeModel({
     maxOutputTokens: 500, // Reduced for concise responses
     temperature: 0.6, // Slightly reduced for more focused responses
     topK: 40, // Consider top 40 tokens
-    topP: 0.9, // Slightly reduced for more focused sampling
+    topP: 0.9, 
   }
 });
 
@@ -98,133 +98,295 @@ const formatChatHistory = (messages) => {
   }));
 };
 
-// Post-process AI response for better formatting and conciseness.
-// Produces a predictable, short structure to improve readability and downstream rendering:
-// TL;DR -> Key Points (bullets) -> Next Steps (numbered) -> Resources (optional) -> Clarifying question
-// This keeps the voice concise and makes it easier for the frontend to present replies.
-const formatAIResponse = (response) => {
-  let formatted = response ? response.toString().trim() : '';
+// Helper function to validate response formatting
+const isWellFormatted = (response) => {
+  if (!response || typeof response !== 'string') return false;
 
-  // Basic normalization
-  formatted = formatted.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
-
-  // Remove stray markdown artefacts
-  formatted = formatted.replace(/(^|\s)\*(?=\s|$)/g, '$1');
-  formatted = formatted.replace(/\*\s+\*/g, '**');
-  formatted = formatted.replace(/\*{3,}/g, '**');
-  formatted = formatted.replace(/\*\*\s*(.*?)\s*\*\*/g, '**$1**');
-
-  // Normalize bullets and lists
-  formatted = formatted.replace(/^\s*\*\s+/gm, '- ');
-  formatted = formatted.replace(/^\s*-\s*/gm, '- ');
-  formatted = formatted.replace(/^(#{1,6})([^\s#])/gm, '$1 $2');
-  formatted = formatted.replace(/^(\s*\d+)\.(\S)/gm, '$1. $2');
-
-  // Remove common filler phrases to keep responses precise
-  const fillerPhrases = [
-    /\bWell,?\s*(to be honest|let me think|you know)\b/gi,
-    /\bI would say that\b/gi,
-    /\bIn my opinion\b/gi,
-    /\bBasically\b/gi,
-    /\bActually\b/gi,
-    /\bSo,?\b/gi,
-    /\bAnyway,?\b/gi,
-    /\bAs an? (AI|assistant)\b/gi,
-    /\bSure\b/gi
+  const checks = [
+    /\*\*.*?\*\*/.test(response),        // Has bold text
+    /^- /.test(response.split('\n').find(line => line.trim().startsWith('-')) || ''), // Proper bullets
+    response.includes('?'),               // Has question
+    response.split('\n').length > 3       // Has multiple lines
   ];
-  fillerPhrases.forEach(phrase => { formatted = formatted.replace(phrase, ''); });
 
-  // Collapse excessive whitespace
-  formatted = formatted.replace(/[ \t]{2,}/g, ' ');
+  return checks.filter(Boolean).length >= 2; // At least 2 formatting elements
+};
 
-  // Ensure the first visible character is uppercase or a markdown token
-  const trimmed = formatted.trim();
-  if (trimmed && !trimmed.charAt(0).match(/[A-Z#\-\*\[]/)) {
-    formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-  } else {
-    formatted = trimmed;
+// Final cleanup function
+const applyFinalCleanup = (response, userName) => {
+  let cleaned = response
+    .replace(/\n{3,}/g, '\n\n')           // Remove excessive line breaks
+    .replace(/\s{2,}/g, ' ')              // Remove excessive spaces
+    .replace(/^\s+|\s+$/g, '');           // Trim
+
+  // Ensure it starts with user's name if not already
+  if (userName && !cleaned.toLowerCase().includes(userName.toLowerCase().substring(0, 3))) {
+    cleaned = `**Hi ${userName}!**\n\n${cleaned}`;
   }
 
-  // If the model already returned a structured reply, try to extract canonical sections.
-  // We'll search for common headings and normalize them.
-  const sectionPatterns = [
-    { key: 'tldr', regex: /^(?:tl;dr|summary|TL;DR)[:\-]?\s*(.+)/im },
-    { key: 'keyPoints', regex: /(?:key points|highlights|what to know)[:\-]?\s*([\s\S]*?)(?:\n{1,2}(?:next steps|actions|what to do)|$)/im },
-    { key: 'nextSteps', regex: /(?:next steps|actions|what to do)[:\-]?\s*([\s\S]*?)(?:\n{1,2}(?:resources|links|references)|$)/im },
-    { key: 'resources', regex: /(?:resources|links|references)[:\-]?\s*([\s\S]*?)$/im }
-  ];
+  // Ensure it ends with a question
+  if (!cleaned.includes('?')) {
+    cleaned += '\n\n**Question:** What would you like to explore next?';
+  }
 
+  return cleaned;
+};
+
+// Enhanced post-processing function for AI responses
+// Ensures consistent, well-formatted, and structured responses
+const formatAIResponse = (response) => {
+  if (!response) return 'I apologize, but I couldn\'t generate a response. Please try again.';
+  
+  let formatted = response.toString().trim();
+
+  // Step 1: Basic cleanup and normalization
+  formatted = formatted
+    .replace(/\r\n/g, '\n')           // Normalize line endings
+    .replace(/\n{4,}/g, '\n\n\n')    // Limit to max 3 consecutive newlines
+    .replace(/[ \t]+/g, ' ')         // Collapse multiple spaces/tabs
+    .replace(/\s+$/gm, '')           // Remove trailing whitespace from lines
+
+  // Step 2: Fix markdown formatting issues
+  formatted = formatted
+    .replace(/\*{4,}/g, '**')                    // Fix excessive asterisks
+    .replace(/\*\s*\*\s*/g, '**')               // Fix spaced asterisks
+    .replace(/\*\*\s*(.*?)\s*\*\*/g, '**$1**')  // Clean bold formatting
+    .replace(/\*([^*\n]+)\*/g, '*$1*')          // Clean italic formatting
+    .replace(/(^|\s)\*(?=\s|$)/g, '$1')         // Remove stray asterisks
+
+  // Step 3: Normalize bullet points and lists
+  formatted = formatted
+    .replace(/^\s*[\*•]\s+/gm, '- ')           // Convert * and • to -
+    .replace(/^\s*[-]\s*/gm, '- ')             // Ensure consistent bullet spacing
+    .replace(/^(\s*\d+)\.(\S)/gm, '$1. $2')    // Fix numbered list spacing
+    .replace(/^(#{1,6})([^\s#])/gm, '$1 $2')   // Fix header spacing
+
+  // Step 4: Remove filler phrases for conciseness
+  const fillerPhrases = [
+    /\bWell,?\s*/gi,
+    /\bSo,?\s*/gi,
+    /\bActually,?\s*/gi,
+    /\bBasically,?\s*/gi,
+    /\bI would say that\b/gi,
+    /\bIn my opinion,?\s*/gi,
+    /\bAs an? (?:AI|assistant),?\s*/gi,
+    /\bYou know,?\s*/gi,
+    /\bLet me tell you,?\s*/gi,
+    /\bTo be honest,?\s*/gi
+  ];
+  
+  fillerPhrases.forEach(phrase => {
+    formatted = formatted.replace(phrase, '');
+  });
+
+  // Step 5: Ensure proper capitalization
+  formatted = formatted.trim();
+  if (formatted && !formatted.charAt(0).match(/[A-Z#\-\*\[\d]/)) {
+    formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  // Step 6: Structure detection and standardization
+  const sections = extractSections(formatted);
+  
+  // Step 7: Build standardized response structure
+  return buildStructuredResponse(sections, formatted);
+};
+
+// Helper function to extract sections from the response
+const extractSections = (text) => {
   const sections = {};
-  sectionPatterns.forEach(p => {
-    const m = formatted.match(p.regex);
-    if (m && m[1]) {
-      sections[p.key] = m[1].trim();
+  
+  // Common section patterns
+  const patterns = {
+    tldr: /(?:^|\n)(?:\*\*)?(?:TL;DR|Summary|Quick Answer)(?:\*\*)?[:\-]?\s*(.+?)(?=\n\n|\n\*\*|$)/is,
+    keyPoints: /(?:^|\n)(?:\*\*)?(?:Key [Pp]oints?|Main [Pp]oints?|Important [Pp]oints?)(?:\*\*)?[:\-]?\s*([\s\S]*?)(?=\n\n\*\*|\n\*\*[A-Z]|$)/is,
+    nextSteps: /(?:^|\n)(?:\*\*)?(?:Next [Ss]teps?|Action [Pp]lan|What to [Dd]o|Recommendations?)(?:\*\*)?[:\-]?\s*([\s\S]*?)(?=\n\n\*\*|\n\*\*[A-Z]|$)/is,
+    resources: /(?:^|\n)(?:\*\*)?(?:Resources?|Links?|References?|Further [Rr]eading)(?:\*\*)?[:\-]?\s*([\s\S]*?)(?=\n\n\*\*|\n\*\*[A-Z]|$)/is,
+    question: /(?:^|\n)(?:\*\*)?(?:Question|Clarifying [Qq]uestion|Want to know)(?:\*\*)?[:\-]?\s*(.+?)(?=\n\n|$)/is
+  };
+
+  Object.keys(patterns).forEach(key => {
+    const match = text.match(patterns[key]);
+    if (match && match[1]) {
+      sections[key] = match[1].trim();
     }
   });
 
-  // Build a consistent, concise structure from either parsed sections or fallback parsing.
-  const buildBulletList = (text) => {
-    if (!text) return null;
-    // Split into lines and keep the most relevant 6 bullets
-    const lines = text.split(/\n+/).map(l => l.replace(/^\s*[-\*\d\.\)]+\s*/, '').trim()).filter(Boolean);
-    return lines.slice(0, 6);
-  };
+  return sections;
+};
 
-  const buildNumberedList = (text) => {
-    if (!text) return null;
-    const lines = text.split(/\n+/).map(l => l.replace(/^\s*[-\*\d\.\)]+\s*/, '').trim()).filter(Boolean);
-    return lines.slice(0, 5);
-  };
-
-  const tldr = sections.tldr || (formatted.split(/\n\n/)[0] || '');
-  const keyPoints = sections.keyPoints ? buildBulletList(sections.keyPoints) : buildBulletList(formatted);
-  const nextSteps = sections.nextSteps ? buildNumberedList(sections.nextSteps) : null;
-  const resources = sections.resources ? buildBulletList(sections.resources) : null;
-
-  // Compose final concise markdown output
+// Helper function to build structured response
+const buildStructuredResponse = (sections, originalText) => {
   const parts = [];
-
-  if (tldr) {
-    const oneLine = tldr.split(/\n/).map(s => s.trim()).filter(Boolean).slice(0, 2).join(' ');
-    parts.push(`**TL;DR:** ${oneLine}`);
+  
+  // 1. TL;DR or opening statement
+  if (sections.tldr) {
+    const cleanTldr = sections.tldr
+      .split(/\n/)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(' ')
+      .replace(/^[-\*\d\.]+\s*/, '');
+    
+    if (cleanTldr.length > 10) {
+      parts.push(`**TL;DR:** ${cleanTldr}`);
+      parts.push(''); // Add spacing
+    }
+  } else {
+    // Extract first meaningful sentence as TL;DR
+    const sentences = originalText.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    if (sentences.length > 0) {
+      const firstSentence = sentences[0].trim().replace(/^[-\*\d\.]+\s*/, '');
+      if (firstSentence.length > 10) {
+        parts.push(`**TL;DR:** ${firstSentence}.`);
+        parts.push(''); // Add spacing
+      }
+    }
   }
 
-  if (keyPoints && keyPoints.length) {
-    parts.push('\n**Key points:**');
-    keyPoints.forEach(bp => parts.push(`- ${bp}`));
+  // 2. Key Points
+  if (sections.keyPoints) {
+    const keyPoints = extractBulletPoints(sections.keyPoints, 6);
+    if (keyPoints.length > 0) {
+      parts.push('**Key Points:**');
+      keyPoints.forEach(point => {
+        parts.push(`- ${point}`);
+      });
+      parts.push(''); // Add spacing
+    }
+  } else {
+    // Extract bullet points from original text
+    const bulletPoints = extractBulletPoints(originalText, 4);
+    if (bulletPoints.length > 0) {
+      parts.push('**Key Points:**');
+      bulletPoints.forEach(point => {
+        parts.push(`- ${point}`);
+      });
+      parts.push(''); // Add spacing
+    }
   }
 
-  if (nextSteps && nextSteps.length) {
-    parts.push('\n**Next steps:**');
-    nextSteps.forEach((step, idx) => parts.push(`${idx + 1}. ${step}`));
+  // 3. Next Steps (if available)
+  if (sections.nextSteps) {
+    const steps = extractNumberedPoints(sections.nextSteps, 5);
+    if (steps.length > 0) {
+      parts.push('**Next Steps:**');
+      steps.forEach((step, idx) => {
+        parts.push(`${idx + 1}. ${step}`);
+      });
+      parts.push(''); // Add spacing
+    }
   }
 
-  if (resources && resources.length) {
-    parts.push('\n**Resources:**');
-    resources.forEach(r => parts.push(`- ${r}`));
+  // 4. Resources (if available)
+  if (sections.resources) {
+    const resources = extractBulletPoints(sections.resources, 4);
+    if (resources.length > 0) {
+      parts.push('**Resources:**');
+      resources.forEach(resource => {
+        parts.push(`- ${resource}`);
+      });
+      parts.push(''); // Add spacing
+    }
   }
 
-  // If nothing parsed, fall back to a short cleaned paragraph (limit ~150 words)
-  if (parts.length === 0) {
-    const words = formatted.split(/\s+/).filter(Boolean);
-    const limited = words.length > 200 ? words.slice(0, 180).join(' ') + '...' : formatted;
-    // Force one-paragraph answer
-    const short = limited.split(/\n+/).map(l => l.trim()).filter(Boolean).slice(0, 6).join(' ');
-    parts.push(short);
+  // 5. Clarifying question (always include)
+  if (sections.question) {
+    const cleanQuestion = sections.question.trim().replace(/^[-\*\d\.]+\s*/, '');
+    if (!cleanQuestion.endsWith('?')) {
+      parts.push(`**Question:** ${cleanQuestion}?`);
+    } else {
+      parts.push(`**Question:** ${cleanQuestion}`);
+    }
+  } else {
+    // Check if original text ends with a question
+    const hasQuestion = /\?[^?]*$/.test(originalText);
+    if (!hasQuestion) {
+      parts.push('**Question:** What specific aspect would you like me to explore further?');
+    }
   }
 
-  // Add a clarifying question prompt at the end if the model didn't include one
-  const lastPart = parts[parts.length - 1] || '';
-  if (!/\?\s*$/.test(lastPart)) {
-    parts.push('\n**Clarifying question:** Is there anything specific you want me to focus on?');
+  // Fallback: If no structure was found, create a clean paragraph
+  if (parts.length <= 2) {
+    const cleanText = originalText
+      .split(/\n+/)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .join(' ')
+      .split(/\s+/)
+      .slice(0, 150)  // Limit to 150 words
+      .join(' ');
+    
+    return `${cleanText}\n\n**Question:** What would you like to know more about?`;
   }
 
+  // Join all parts and clean up
   let result = parts.join('\n');
-
-  // Final cleanup: remove duplicated blank lines and trim
-  result = result.replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+  
+  // Final cleanup
+  result = result
+    .replace(/\n{3,}/g, '\n\n')      // Max 2 consecutive newlines
+    .replace(/^\s+|\s+$/g, '')       // Trim start and end
+    .replace(/\n\s*\n\s*$/g, '');    // Remove trailing empty lines
 
   return result;
+};
+
+// Helper function to extract bullet points
+const extractBulletPoints = (text, maxPoints = 5) => {
+  if (!text) return [];
+  
+  const points = text
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(line => line.length > 10)
+    .map(line => line.replace(/^[-\*•\d\.]+\s*/, ''))
+    .filter(line => line.length > 5)
+    .slice(0, maxPoints);
+  
+  return points;
+};
+
+// Helper function to extract numbered points
+const extractNumberedPoints = (text, maxPoints = 5) => {
+  if (!text) return [];
+  
+  const points = text
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(line => line.length > 10)
+    .map(line => line.replace(/^[\d\.]+\s*/, ''))
+    .filter(line => line.length > 5)
+    .slice(0, maxPoints);
+  
+  return points;
+};
+
+// Additional function to ensure proper name integration
+const ensurePersonalizedGreeting = (formattedResponse, userName) => {
+  if (!userName || !formattedResponse) return formattedResponse;
+  
+  // If response doesn't mention the user's name, add it to the beginning
+  if (!formattedResponse.toLowerCase().includes(userName.toLowerCase())) {
+    const firstLine = formattedResponse.split('\n')[0];
+    if (firstLine.startsWith('**Hi')) {
+      return formattedResponse.replace(
+        `**Hi ${userName}!`
+      );
+    } else {
+      return `**Hi ${userName}!**\n\n${formattedResponse}`;
+    }
+  }
+  
+  return formattedResponse;
+};
+
+module.exports = {
+  formatAIResponse,
+  ensurePersonalizedGreeting,
+  isWellFormatted,
+  applyFinalCleanup
 };
 
 
@@ -360,42 +522,57 @@ exports.processMessage = async (user, userMessage) => {
   try {
     const userId = user._id;
     const userName = user.firstName;
-    
+
     // Get chat history
     const chat = await getChatHistory(userId);
-    
+
     // Add user message to history
     chat.messages.push({
       content: userMessage,
       sender: 'user',
       timestamp: new Date()
     });
-    
+
     // Find similar past messages
     const similarMessages = findSimilarMessages(userMessage, chat.messages.slice(0, -1));
-    
-    // Create personalized system context
+
+    // Create personalized system context with enhanced formatting instructions
     const personalizedContext = `
-You are Zariya, an expert AI career counselor with deep knowledge of various career paths, 
-education requirements, job markets, and skill development. Your goal is to help users 
+You are Zariya, an expert AI career counselor with deep knowledge of various career paths,
+education requirements, job markets, and skill development. Your goal is to help users
 explore career options, make informed decisions, and develop plans to achieve their professional goals.
 
 You are talking to ${userName}. Always address them by their first name in your responses.
 
-RESPONSE FORMATTING GUIDELINES:
-- Keep responses VERY concise (aim for 100-200 words maximum)
-- NEVER write long paragraphs - break everything into short points
-- Use clear, structured formatting with markdown
-- Use **bold** for emphasis on key points and important terms
-- Use *italic* for subtle emphasis or highlighting specific concepts
-- Use bullet points (-) for ALL lists and steps
-- Use numbered lists (1., 2., 3.) for sequential steps or ordered information
-- Use proper headings with ## for sections when needed
-- Add line breaks between sections for better readability
-- Use proper spacing: single line between paragraphs, double line between major sections
-- Structure responses with: brief intro → key points in bullets/numbers → conclusion
-- Use code blocks (\`\`\`) for examples or technical terms when appropriate
-- Ensure consistent formatting throughout the response
+CRITICAL RESPONSE FORMATTING REQUIREMENTS:
+- ALWAYS structure your response with clear sections using **bold headers**
+- Use proper markdown formatting throughout
+- Keep responses concise (150-250 words maximum)
+- Use bullet points (-) for all lists
+- Use numbered lists (1., 2., 3.) for sequential steps
+- Add proper line breaks between sections
+- End with a clarifying question
+
+MANDATORY RESPONSE STRUCTURE:
+1. Start with a brief, personalized greeting using their name
+2. Provide key points in bullet format
+3. Include next steps if applicable
+4. End with a specific question to continue the conversation
+
+FORMATTING EXAMPLES:
+**Hi [Name]! TL;DR:** Brief summary of your advice.
+
+**Key Points:**
+- First important point with specific details
+- Second point with actionable advice
+- Third point connecting to their interests
+
+**Next Steps:**
+1. Specific action they can take immediately
+2. Medium-term goal to work towards
+3. Long-term planning suggestion
+
+**Question:** What aspect interests you most?
 
 Some guidelines for your responses:
 1. Be supportive, encouraging, and empathetic
@@ -404,7 +581,8 @@ Some guidelines for your responses:
 4. Share relevant resources and steps for skill development
 5. Ask clarifying questions when needed to provide better guidance
 6. Be honest about the challenges of different career paths while maintaining a positive outlook
-7. Use proper formatting with markdown for lists, bold text, italic text, etc. to make responses more readable
+7. ALWAYS use proper markdown formatting for better readability
+8. NEVER write long paragraphs - break everything into structured sections
 
 You specialize in:
 - Career exploration and planning
@@ -423,8 +601,9 @@ Based on ${userName}'s recent quiz results, here are the key insights:
 - Suggested career streams: ${user.quizResults[user.quizResults.length - 1].suggestedStreams?.join(', ') || 'Not available'}
 
 **Detailed Question Responses:**
-${user.quizResults[user.quizResults.length - 1].detailedAnswers?.map((answer, idx) => 
-  `${idx + 1}. **Question ${answer.questionIndex + 1}** (${answer.category}): "${answer.question}"\n   - Selected: "${answer.answerText}"`
+${user.quizResults[user.quizResults.length - 1].detailedAnswers?.map((answer, idx) =>
+  `${idx + 1}. **Question ${answer.questionIndex + 1}** (${answer.category}): "${answer.question}"
+   - Selected: "${answer.answerText}"`
 ).join('\n') || 'Detailed answers not available'}
 
 **Key Interests Identified:**
@@ -438,37 +617,40 @@ ${user.quizResults[user.quizResults.length - 1].personalityTraits?.map(trait => 
 
 Use this detailed quiz information to provide highly personalized career guidance and recommendations.` : ''}
 
-${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarMessages.map(sim => `User asked: "${sim.userMessage}"\nYou responded: "${sim.botResponse}"`).join('\n\n')}\n\nUse this context to provide consistent and improved responses.` : ''}
-`;
-    
-  // Mapping notice: ensure model replaces internal codes like Interest_1 / Trait_1
-  // with friendly labels and includes short keywords in responses.
-  const mappingNotice = `
-When referring to quiz result codes, ALWAYS replace internal codes with friendly labels and include short keywords.
+${similarMessages.length > 0 ? `
+**CONVERSATION CONTEXT:**
+Based on similar past conversations:
+${similarMessages.map(sim => `User asked: "${sim.userMessage}"
+You responded: "${sim.botResponse}"`).join('\n\n')}
 
-- Map quiz codes to labels and keywords:
-  - Interest_0 -> Technology (keywords: programming, software, computers)
-  - Interest_1 -> Arts & Design (keywords: design, visual, creative)
-  - Interest_2 -> Science (keywords: research, laboratory, experimentation)
-  - Interest_3 -> Business (keywords: entrepreneurship, management, commerce)
-
-  - Trait_0 -> Introvert (keywords: reflective, reserved, thoughtful)
-  - Trait_1 -> Outgoing (keywords: social, energetic, communicative)
-  - Trait_2 -> Analytical (keywords: logical, data-driven, detail-oriented)
-  - Trait_3 -> Empathetic (keywords: empathetic, people-oriented, supportive)
-
-Guidelines:
-- Never output raw codes like \`Interest_1\` or \`Trait_1\` to the user; always use the mapped label.
-- When suggesting streams, skills, or next steps, include 2-3 short keywords from the list in parentheses or after the recommendation.
-- Keep the keyword list short and relevant; use them to make suggestions concrete (e.g., "Consider Arts & Design — focus: design, visual, creative").
+Use this context to provide consistent and improved responses.` : ''}
 `;
 
-  const finalPersonalizedContext = mappingNotice + '\n' + personalizedContext;
+    // Mapping notice for quiz codes
+    const mappingNotice = `
+IMPORTANT: When referring to quiz result codes, ALWAYS replace internal codes with friendly labels:
 
-  // Format chat history for Gemini
+**Interest Mapping:**
+- Interest_0 -> Technology (programming, software, computers)
+- Interest_1 -> Arts & Design (design, visual, creative)
+- Interest_2 -> Science (research, laboratory, experimentation)
+- Interest_3 -> Business (entrepreneurship, management, commerce)
+
+**Trait Mapping:**
+- Trait_0 -> Introvert (reflective, reserved, thoughtful)
+- Trait_1 -> Outgoing (social, energetic, communicative)
+- Trait_2 -> Analytical (logical, data-driven, detail-oriented)
+- Trait_3 -> Empathetic (empathetic, people-oriented, supportive)
+
+NEVER output raw codes like Interest_1 or Trait_1. Always use mapped labels with keywords.
+`;
+
+    const finalPersonalizedContext = mappingNotice + '\n' + personalizedContext;
+
+    // Format chat history for Gemini
     const formattedHistory = formatChatHistory(chat.messages);
-    
-    // Check if this is a new chat or continuing conversation
+
+    // Get AI response
     let response;
     if (chat.messages.length <= 1) {
       // Start new chat with system context
@@ -486,58 +668,63 @@ Guidelines:
       });
       response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
     }
-    
+
     const botResponse = response.response.text();
-    
-    // Format the response for better readability and conciseness
-    const formattedResponse = formatAIResponse(botResponse);
-    
+
+    // Apply enhanced formatting
+    let formattedResponse = formatAIResponse(botResponse);
+
+    // Ensure personalized greeting with user's name
+    formattedResponse = ensurePersonalizedGreeting(formattedResponse, userName);
+
+    // Validate formatting (optional quality check)
+    if (!isWellFormatted(formattedResponse)) {
+      console.log('Response formatting could be improved, applying additional cleanup...');
+      formattedResponse = applyFinalCleanup(formattedResponse, userName);
+    }
+
     // Add formatted bot response to chat history
     chat.messages.push({
       content: formattedResponse,
       sender: 'bot',
       timestamp: new Date()
     });
-    
+
     // Update last updated timestamp
     chat.lastUpdated = new Date();
-    
+
     // Save chat history
     await chat.save();
-    
+
     return formattedResponse;
   } catch (error) {
-    // Centralized error logging
+    // ... (rest of error handling remains the same)
     console.error('AI processing error:', error && (error.stack || error.message || error));
 
-    // Check if this is a quota/rate limit error that should be retried
     const errMsg = (error && (error.message || '')).toString().toLowerCase();
-    const isQuotaError = errMsg.includes('quota') || errMsg.includes('429') || 
+    const isQuotaError = errMsg.includes('quota') || errMsg.includes('429') ||
                         (error && (error.code === 429 || error.status === 429));
 
     if (isQuotaError) {
-      // For quota errors, provide a user-friendly message
       const quotaError = new Error('AI usage quota exceeded. The free tier allows 50 requests per day. Please try again tomorrow or consider upgrading your plan.');
       quotaError.status = 429;
       quotaError.original = error;
       throw quotaError;
     }
 
-    // For other errors, provide appropriate messages
     const outErr = new Error();
 
     if (error && error.code === 'ETIMEDOUT') {
       outErr.message = "AI request timed out. Please try again later or simplify your query.";
-      outErr.status = 504; // Gateway Timeout
+      outErr.status = 504;
     } else if (errMsg.includes('503') || /service unavailable|overload|overloaded|temporar/i.test(errMsg) || (error && (error.code === 503 || error.status === 503))) {
       outErr.message = "AI service is currently unavailable. Please try again in a few minutes.";
-      outErr.status = 503; // Service Unavailable
+      outErr.status = 503;
     } else {
       outErr.message = "AI service error. Please try again later.";
       outErr.status = 500;
     }
 
-    // Attach original error for debugging (not sent to clients)
     outErr.original = error;
     throw outErr;
   }
