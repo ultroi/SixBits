@@ -59,6 +59,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user in context and localStorage (useful when other components fetch latest user)
+  const updateUser = (newUser) => {
+    setUser(newUser);
+    if (newUser) {
+      localStorage.setItem('user', JSON.stringify(newUser));
+      setIsAuthenticated(true);
+    } else {
+      localStorage.removeItem('user');
+      setIsAuthenticated(false);
+    }
+  };
+
   // Register function
   const register = async (userData) => {
     try {
@@ -92,6 +104,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         loading,
         login,
+        updateUser,
         register,
         logout
       }}

@@ -27,14 +27,18 @@ const Dashboard = () => {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { logout, user } = useAuth();
+  const { updateUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         
-        // Get current user data
-        const { user: currentUser } = await authService.getCurrentUser();
+  // Get current user data
+  const { user: currentUser } = await authService.getCurrentUser();
+
+  // Update auth context so components relying on context immediately see the latest user
+  if (currentUser && updateUser) updateUser(currentUser);
         
         // Check quiz completion status
         if (currentUser && currentUser._id) {
