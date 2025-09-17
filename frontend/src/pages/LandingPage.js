@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GraduationCap, TrendingUp, Lightbulb, Bot, Sparkles, ArrowRight, Menu, X, Moon, Sun, Star, Users, Award, Zap } from 'lucide-react';
@@ -31,6 +31,29 @@ const LandingPage = () => {
     }
   };
 
+  // Smooth scroll to a section by id with offset so sticky navbar doesn't cover headings
+  const scrollToId = (id) => {
+    const el = document.getElementById(id.replace('#', ''));
+    if (!el) return;
+    // get navbar height (sticky top element)
+    const nav = document.querySelector('nav');
+    const offset = nav ? nav.getBoundingClientRect().height + 8 : 16; // small padding
+    const top = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
+  };
+
+  // Handle initial hash on mount (e.g., visiting /#about)
+  useEffect(() => {
+    if (window.location.hash) {
+      const id = window.location.hash.replace('#', '');
+      // slight delay to allow layout to settle
+      setTimeout(() => {
+        scrollToId(id);
+      }, 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-indigo-50 via-white to-indigo-50'}`}>
       {/* Navigation */}
@@ -48,8 +71,8 @@ const LandingPage = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</a>
-              <a href="#about" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</a>
+              <button onClick={() => scrollToId('features')} className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</button>
+              <button onClick={() => scrollToId('about')} className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</button>
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -92,8 +115,8 @@ const LandingPage = () => {
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
               <div className="flex flex-col space-y-4">
-                <a href="#features" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</a>
-                <a href="#about" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</a>
+                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</a>
+                <a href="#about" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</a>
                 {isAuthenticated ? (
                   <Link to="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Dashboard</Link>
                 ) : (
@@ -111,7 +134,7 @@ const LandingPage = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-purple-600/20 to-pink-600/20"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative">
           <div className="md:flex md:items-center md:justify-between">
             <div className="md:w-1/2 md:pr-8">
               <div className="flex items-center space-x-2 mb-6">
@@ -139,14 +162,14 @@ const LandingPage = () => {
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 )}
-                <a href="#features" className="bg-white/80 dark:bg-gray-800/80 backdrop-blur hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center space-x-2">
+                <button onClick={() => scrollToId('features')} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center space-x-2">
                   <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <span>Explore Features</span>
-                </a>
+                </button>
               </div>
               
               {/* Stats */}
-              <div className="mt-12 grid grid-cols-3 gap-8">
+              <div className="mt-8 grid grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">1+</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
@@ -222,6 +245,35 @@ const LandingPage = () => {
       </div>
 
       {/* Features */}
+      {/* About */}
+      <div id="about" className="bg-gray-50 dark:bg-gray-900 py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">About Zariya</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              Zariya is an AI-powered career guidance platform built to help students and professionals
+              discover meaningful career paths, learn the skills they need, and make data-driven decisions
+              about education and job opportunities.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">Our Mission</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">Empower people with personalized, accessible career guidance so they can make confident decisions about their future.</p>
+            </div>
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">How it Works</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">Leverages conversational AI, market insights, and curated learning pathways to generate recommendations tailored to each user's goals and background.</p>
+            </div>
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">Privacy</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">We prioritize user privacy and only use data to improve guidance; personal data is protected and never shared without consent.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="features" className="bg-white dark:bg-gray-800 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
