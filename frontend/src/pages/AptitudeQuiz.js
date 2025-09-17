@@ -300,7 +300,8 @@ const AptitudeQuiz = () => {
     // Map placeholder keys to meaningful names
     const interestLabels = {
       Interest_0: 'Technology',
-      Interest_1: 'Art',
+      // Updated Interest_1 from 'Art' to 'Arts & Design' per requested correction
+      Interest_1: 'Arts & Design',
       Interest_2: 'Science',
       Interest_3: 'Business'
     };
@@ -312,16 +313,33 @@ const AptitudeQuiz = () => {
     };
     const personalityLabels = {
       Trait_0: 'Introvert',
-      Trait_1: 'Extrovert',
+      // Updated Trait_1 label to a clearer word 'Outgoing'
+      Trait_1: 'Outgoing',
       Trait_2: 'Analytical',
       Trait_3: 'Empathetic'
+    };
+
+    // Keyword mappings for better context in recommendations
+    const interestKeywords = {
+      Interest_0: ['programming', 'software', 'computers'],
+      Interest_1: ['design', 'visual', 'creative'],
+      Interest_2: ['research', 'laboratory', 'experimentation'],
+      Interest_3: ['entrepreneurship', 'management', 'commerce']
+    };
+
+    const personalityKeywords = {
+      Trait_0: ['reflective', 'reserved', 'thoughtful'],
+      Trait_1: ['social', 'energetic', 'communicative'],
+      Trait_2: ['logical', 'data-driven', 'detail-oriented'],
+      Trait_3: ['empathetic', 'people-oriented', 'supportive']
     };
 
     // Helper to get label or fallback to key
     const getLabel = (key, labels) => labels[key] || key;
 
-    const topInterest = Object.entries(results.interests).sort(([, a], [, b]) => b - a)[0];
-    const topStrength = Object.entries(results.strengths).sort(([, a], [, b]) => b - a)[0];
+  const topInterest = Object.entries(results.interests).sort(([, a], [, b]) => b - a)[0];
+  const topStrength = Object.entries(results.strengths).sort(([, a], [, b]) => b - a)[0];
+  const topPersonality = Object.entries(results.personality).sort(([, a], [, b]) => b - a)[0];
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -449,9 +467,13 @@ const AptitudeQuiz = () => {
                         <TrendingUp className="w-5 h-5 text-indigo-500 mr-2 animate-bounce" />
                         <span className="font-medium text-gray-900">Top Interest: {getLabel(topInterest[0], interestLabels)}</span>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 mb-2">
                         Based on your interests, {getLabel(topInterest[0], interestLabels).toLowerCase()} stream would be ideal for you.
                       </p>
+                      {/* Show keywords for the interest if available */}
+                      {interestKeywords[topInterest[0]] && (
+                        <div className="text-xs text-gray-500">Keywords: {interestKeywords[topInterest[0]].join(', ')}</div>
+                      )}
                     </div>
                   )}
                   {topStrength && (
@@ -460,9 +482,28 @@ const AptitudeQuiz = () => {
                         <Star className="w-5 h-5 text-purple-500 mr-2 animate-bounce" />
                         <span className="font-medium text-gray-900">Top Strength: {getLabel(topStrength[0], strengthLabels)}</span>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 mb-2">
                         Your {getLabel(topStrength[0], strengthLabels).toLowerCase()} skills will help you excel in your chosen field.
                       </p>
+                      {/* If we also have a top personality, show a related keyword hint */}
+                      {topPersonality && personalityKeywords[topPersonality[0]] && (
+                        <div className="text-xs text-gray-500">Personality keywords: {personalityKeywords[topPersonality[0]].join(', ')}</div>
+                      )}
+                    </div>
+                  )}
+                  {/* Additionally, show a small card for top personality if present */}
+                  {topPersonality && (
+                    <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                      <div className="flex items-center mb-2">
+                        <Brain className="w-5 h-5 text-green-500 mr-2 animate-bounce" />
+                        <span className="font-medium text-gray-900">Top Personality: {getLabel(topPersonality[0], personalityLabels)}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Your personality leans towards {getLabel(topPersonality[0], personalityLabels).toLowerCase()} traits.
+                      </p>
+                      {personalityKeywords[topPersonality[0]] && (
+                        <div className="text-xs text-gray-500">Keywords: {personalityKeywords[topPersonality[0]].join(', ')}</div>
+                      )}
                     </div>
                   )}
                 </div>

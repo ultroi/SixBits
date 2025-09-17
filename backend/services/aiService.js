@@ -375,7 +375,31 @@ Use this detailed quiz information to provide highly personalized career guidanc
 ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarMessages.map(sim => `User asked: "${sim.userMessage}"\nYou responded: "${sim.botResponse}"`).join('\n\n')}\n\nUse this context to provide consistent and improved responses.` : ''}
 `;
     
-    // Format chat history for Gemini
+  // Mapping notice: ensure model replaces internal codes like Interest_1 / Trait_1
+  // with friendly labels and includes short keywords in responses.
+  const mappingNotice = `
+When referring to quiz result codes, ALWAYS replace internal codes with friendly labels and include short keywords.
+
+- Map quiz codes to labels and keywords:
+  - Interest_0 -> Technology (keywords: programming, software, computers)
+  - Interest_1 -> Arts & Design (keywords: design, visual, creative)
+  - Interest_2 -> Science (keywords: research, laboratory, experimentation)
+  - Interest_3 -> Business (keywords: entrepreneurship, management, commerce)
+
+  - Trait_0 -> Introvert (keywords: reflective, reserved, thoughtful)
+  - Trait_1 -> Outgoing (keywords: social, energetic, communicative)
+  - Trait_2 -> Analytical (keywords: logical, data-driven, detail-oriented)
+  - Trait_3 -> Empathetic (keywords: empathetic, people-oriented, supportive)
+
+Guidelines:
+- Never output raw codes like \`Interest_1\` or \`Trait_1\` to the user; always use the mapped label.
+- When suggesting streams, skills, or next steps, include 2-3 short keywords from the list in parentheses or after the recommendation.
+- Keep the keyword list short and relevant; use them to make suggestions concrete (e.g., "Consider Arts & Design — focus: design, visual, creative").
+`;
+
+  const finalPersonalizedContext = mappingNotice + '\n' + personalizedContext;
+
+  // Format chat history for Gemini
     const formattedHistory = formatChatHistory(chat.messages);
     
     // Check if this is a new chat or continuing conversation
@@ -383,14 +407,14 @@ ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarM
     if (chat.messages.length <= 1) {
       // Start new chat with system context
       const chatSession = model.startChat({
-        history: [{ role: 'model', parts: [{ text: personalizedContext }] }],
+        history: [{ role: 'model', parts: [{ text: finalPersonalizedContext }] }],
       });
       response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
     } else {
       // Continue existing chat
       const chatSession = model.startChat({
         history: [
-          { role: 'model', parts: [{ text: personalizedContext }] },
+          { role: 'model', parts: [{ text: finalPersonalizedContext }] },
           ...formattedHistory.slice(0, -1) // Exclude the latest user message
         ],
       });
