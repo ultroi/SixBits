@@ -386,7 +386,9 @@ module.exports = {
   formatAIResponse,
   ensurePersonalizedGreeting,
   isWellFormatted,
-  applyFinalCleanup
+  applyFinalCleanup,
+  processMessage,
+  generatePersonalizedQuiz
 };
 
 
