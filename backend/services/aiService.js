@@ -382,15 +382,6 @@ const ensurePersonalizedGreeting = (formattedResponse, userName) => {
   return formattedResponse;
 };
 
-module.exports = {
-  formatAIResponse,
-  ensurePersonalizedGreeting,
-  isWellFormatted,
-  applyFinalCleanup,
-  processMessage,
-  generatePersonalizedQuiz
-};
-
 
 
 
