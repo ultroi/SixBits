@@ -50,6 +50,13 @@ const userSchema = new mongoose.Schema(
       strengths: [String],
       personalityTraits: [String],
       suggestedStreams: [String],
+      detailedAnswers: [{
+        questionIndex: Number,
+        question: String,
+        selectedAnswer: Number,
+        answerText: String,
+        category: String
+      }],
       dateTaken: { type: Date, default: Date.now }
     }],
     location: {

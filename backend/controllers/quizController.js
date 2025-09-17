@@ -45,6 +45,7 @@ exports.submitQuiz = async (req, res) => {
     const interests = [];
     const strengths = [];
     const personalityTraits = [];
+    const detailedAnswers = [];
     
     // If we have a quizId and it's not 'personalized-quiz', try to get the quiz
     let quiz = null;
@@ -59,6 +60,15 @@ exports.submitQuiz = async (req, res) => {
         if (index < quiz.questions.length) {
           if (answer === quiz.questions[index].correctAnswer) score++;
           
+          // Store detailed answer
+          detailedAnswers.push({
+            questionIndex: index,
+            question: quiz.questions[index].question,
+            selectedAnswer: answer,
+            answerText: quiz.questions[index].options[answer],
+            category: quiz.questions[index].category
+          });
+          
           // Categorize based on question category
           const category = quiz.questions[index].category;
           if (category === 'interest') interests.push(quiz.questions[index].options[answer]);
@@ -72,13 +82,26 @@ exports.submitQuiz = async (req, res) => {
       answers.forEach((answerIndex, questionIndex) => {
         // For personalized quizzes, we'll categorize based on question index pattern
         // Questions 0-2: interests, 3-5: strengths, 6-9: personality
+        let category = 'personality';
         if (questionIndex >= 0 && questionIndex <= 2) {
+          category = 'interest';
           interests.push(`Interest_${answerIndex}`);
         } else if (questionIndex >= 3 && questionIndex <= 5) {
+          category = 'strength';
           strengths.push(`Strength_${answerIndex}`);
         } else if (questionIndex >= 6 && questionIndex <= 9) {
           personalityTraits.push(`Trait_${answerIndex}`);
         }
+        
+        // Store detailed answer for personalized quiz
+        detailedAnswers.push({
+          questionIndex: questionIndex,
+          question: `Question ${questionIndex + 1}`,
+          selectedAnswer: answerIndex,
+          answerText: `Option ${answerIndex + 1}`,
+          category: category
+        });
+        
         score += (answerIndex + 1); // Simple scoring based on answer choice
       });
     }
@@ -106,6 +129,7 @@ exports.submitQuiz = async (req, res) => {
       strengths,
       personalityTraits,
       suggestedStreams,
+      detailedAnswers,
       dateTaken: new Date()
     };
     

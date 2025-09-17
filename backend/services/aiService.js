@@ -348,6 +348,30 @@ You specialize in:
 - Interview and resume advice
 - Professional development strategies
 
+${user.quizResults && user.quizResults.length > 0 ? `
+**USER'S QUIZ RESULTS ANALYSIS:**
+Based on ${userName}'s recent quiz results, here are the key insights:
+
+**Quiz Performance Summary:**
+- Latest quiz score: ${user.quizResults[user.quizResults.length - 1].score || 'N/A'}
+- Suggested career streams: ${user.quizResults[user.quizResults.length - 1].suggestedStreams?.join(', ') || 'Not available'}
+
+**Detailed Question Responses:**
+${user.quizResults[user.quizResults.length - 1].detailedAnswers?.map((answer, idx) => 
+  `${idx + 1}. **Question ${answer.questionIndex + 1}** (${answer.category}): "${answer.question}"\n   - Selected: "${answer.answerText}"`
+).join('\n') || 'Detailed answers not available'}
+
+**Key Interests Identified:**
+${user.quizResults[user.quizResults.length - 1].interests?.map(interest => `- ${interest}`).join('\n') || 'Not available'}
+
+**Key Strengths Identified:**
+${user.quizResults[user.quizResults.length - 1].strengths?.map(strength => `- ${strength}`).join('\n') || 'Not available'}
+
+**Personality Traits Identified:**
+${user.quizResults[user.quizResults.length - 1].personalityTraits?.map(trait => `- ${trait}`).join('\n') || 'Not available'}
+
+Use this detailed quiz information to provide highly personalized career guidance and recommendations.` : ''}
+
 ${similarMessages.length > 0 ? `Based on similar past conversations:\n${similarMessages.map(sim => `User asked: "${sim.userMessage}"\nYou responded: "${sim.botResponse}"`).join('\n\n')}\n\nUse this context to provide consistent and improved responses.` : ''}
 `;
     
