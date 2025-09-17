@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { GraduationCap, TrendingUp, Lightbulb, Bot, Sparkles, ArrowRight, Menu, X, Moon, Sun, Star, Users, Award, Zap } from 'lucide-react';
 
 const LandingPage = () => {
@@ -11,6 +12,7 @@ const LandingPage = () => {
   const [inputValue, setInputValue] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const handleSendMessage = () => {
     if (inputValue.trim()) {
@@ -54,14 +56,21 @@ const LandingPage = () => {
               >
                 {darkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />}
               </button>
-              <Link to="/login" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
-                Login
-              </Link>
-              <Link to="/signup" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-2 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                Sign Up
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
+                    Login
+                  </Link>
+                  <Link to="/signup" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-2 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
-
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center space-x-2">
               <button
@@ -85,12 +94,14 @@ const LandingPage = () => {
               <div className="flex flex-col space-y-4">
                 <a href="#features" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</a>
                 <a href="#about" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</a>
-                <Link to="/login" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">
-                  Login
-                </Link>
-                <Link to="/signup" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-2 rounded-xl font-medium transition-all duration-200 text-center">
-                  Sign Up
-                </Link>
+                {isAuthenticated ? (
+                  <Link to="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Dashboard</Link>
+                ) : (
+                  <>
+                    <Link to="/login" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Login</Link>
+                    <Link to="/signup" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-2 rounded-xl font-medium transition-all duration-200 text-center">Sign Up</Link>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -117,10 +128,17 @@ const LandingPage = () => {
               </p>
               
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <Link to="/signup" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group">
-                  <span>Get Started Free</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                {isAuthenticated ? (
+                  <Link to="/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                ) : (
+                  <Link to="/signup" className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group">
+                    <span>Get Started Free</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                )}
                 <a href="#features" className="bg-white/80 dark:bg-gray-800/80 backdrop-blur hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center space-x-2">
                   <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <span>Explore Features</span>
