@@ -310,7 +310,7 @@ const Dashboard = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
               <h2 className="text-2xl font-bold mb-2 relative z-10">
-                Hey {user?.firstName}, ready to explore? �
+                Hey {user?.firstName}, ready to explore? 
               </h2>
               <p className="text-blue-100 mb-4 relative z-10">
                 {user?.class} • Interests: {user?.academicInterests?.join(', ') || 'Exploring options'} • Age {user?.age}

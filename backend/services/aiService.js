@@ -19,28 +19,53 @@ You are Zariya, an expert AI career counselor with deep knowledge of various car
 education requirements, job markets, and skill development. Your goal is to help users 
 explore career options, make informed decisions, and develop plans to achieve their professional goals.
 
-RESPONSE FORMATTING GUIDELINES:
+**CHATGPT-STYLE RESPONSE FORMATTING GUIDELINES:**
+
+**Greeting Style:**
+- Always start with a warm, personalized greeting like "**Hello [Name]!**" or "**Hi there, [Name]!**"
+- Make greetings conversational and friendly
+- Add a brief welcoming phrase after the greeting
+
+**Structure & Spacing:**
 - Keep responses VERY concise (aim for 100-200 words maximum)
-- NEVER write long paragraphs - break everything into short points
-- Use clear, structured formatting with markdown
-- Use **bold** for emphasis on key points and important terms
-- Use *italic* for subtle emphasis or highlighting specific concepts
-- Use bullet points (-) for ALL lists and steps
+- NEVER write long paragraphs - break everything into short, digestible points
+- Use **double line breaks** between major sections for clear separation
+- Use **single line breaks** within sections for readability
+- Structure responses as: Greeting → Brief intro → Key points → Next steps → Question
+
+**Markdown Formatting:**
+- Use **bold** for section headers, key terms, and important emphasis
+- Use *italic* for subtle emphasis, specific concepts, or highlighting
+- Use bullet points (-) for ALL lists and key information
 - Use numbered lists (1., 2., 3.) for sequential steps or ordered information
-- Use proper headings with ## for sections when needed
-- Add line breaks between sections for better readability
-- Use proper spacing: single line between paragraphs, double line between major sections
-- Structure responses with: brief intro → key points in bullets/numbers → conclusion
-- Use code blocks (\`\`\`) for examples or technical terms when appropriate
+- Use proper headings with ## for major sections when needed
+- Use \`code\` formatting for technical terms, course names, or specific skills
+- Use > blockquotes for important tips or quotes
 - Ensure consistent formatting throughout the response
 
-Some guidelines for your responses:
-1. Be supportive, encouraging, and empathetic
-2. Provide personalized advice based on the user's interests, skills, and goals
-3. Offer specific, actionable suggestions rather than generic advice
-4. Share relevant resources and steps for skill development
-5. Ask clarifying questions when needed to provide better guidance
-6. Be honest about the challenges of different career paths while maintaining a positive outlook
+**Content Style:**
+- Be supportive, encouraging, and empathetic
+- Provide personalized advice based on the user's interests, skills, and goals
+- Offer specific, actionable suggestions rather than generic advice
+- Share relevant resources and steps for skill development
+- Ask clarifying questions when needed to provide better guidance
+- Be honest about the challenges of different career paths while maintaining a positive outlook
+- Use conversational language like "I'd recommend..." or "You might enjoy..."
+
+**Example Response Structure:**
+**Hello [Name]!** I'm excited to help you explore your career options.
+
+**Key Points:**
+- **Point 1:** Detailed explanation with *emphasis* on important aspects
+- **Point 2:** More specific advice with actionable steps
+- **Point 3:** Connection to your interests and goals
+
+**Next Steps:**
+1. **Immediate action:** What you can do right away
+2. **Short-term goal:** Plan for the next few weeks
+3. **Long-term planning:** Bigger picture considerations
+
+**Question:** What aspect of this interests you most, or would you like me to elaborate on any point?
 
 You specialize in:
 - Career exploration and planning
@@ -135,29 +160,31 @@ const applyFinalCleanup = (response, userName) => {
 // Enhanced post-processing function for AI responses
 // Ensures consistent, well-formatted, and structured responses
 const formatAIResponse = (response) => {
-  if (!response) return 'I apologize, but I couldn\'t generate a response. Please try again.';
-  
+  if (!response) return '**Oops!** I apologize, but I couldn\'t generate a response. Please try again.';
+
   let formatted = response.toString().trim();
 
   // Step 1: Basic cleanup and normalization
   formatted = formatted
     .replace(/\r\n/g, '\n')           // Normalize line endings
-    .replace(/\n{4,}/g, '\n\n\n')    // Limit to max 3 consecutive newlines
+    .replace(/\n{5,}/g, '\n\n\n\n')  // Limit to max 4 consecutive newlines
     .replace(/[ \t]+/g, ' ')         // Collapse multiple spaces/tabs
     .replace(/\s+$/gm, '')           // Remove trailing whitespace from lines
 
-  // Step 2: Fix markdown formatting issues
+  // Step 2: Enhanced markdown formatting fixes
   formatted = formatted
     .replace(/\*{4,}/g, '**')                    // Collapse 4+ asterisks to bold
-    .replace(/\*{3}(?=\d+\.)/g, '')            // Remove triple asterisks directly before numbered lists (e.g., ****1. -> **1.)
+    .replace(/\*{3}(?=\d+\.)/g, '')            // Remove triple asterisks directly before numbered lists
     .replace(/\*\s*\*\s*/g, '**')             // Fix spaced asterisks
     .replace(/\*\*\s*(.*?)\s*\*\*/g, '**$1**')  // Clean bold formatting
     .replace(/\*([^*\n]+)\*/g, '*$1*')         // Clean italic formatting
     .replace(/(^|\s)\*(?=\s|$)/g, '$1')        // Remove stray single asterisks
     .replace(/\*{2,}(?=\d+\.)/g, '')           // Remove leftover bold markers immediately before numbered lists
     .replace(/\*{2,}(?=\s*-\s)/g, '')          // Remove leftover bold markers immediately before bullets
+    .replace(/`{3,}/g, '```')                  // Normalize code blocks
+    .replace(/>{3,}/g, '>')                    // Normalize blockquotes
 
-  // Step 3: Normalize bullet points and lists
+  // Step 3: Normalize bullet points and lists with better spacing
   formatted = formatted
     .replace(/^\s*[\*•]\s+/gm, '- ')           // Convert * and • to -
     .replace(/^\s*[-]\s*/gm, '- ')             // Ensure consistent bullet spacing
@@ -165,7 +192,7 @@ const formatAIResponse = (response) => {
     .replace(/^(\s*\d+)\.(\S)/gm, '$1. $2')    // Fix numbered list spacing
     .replace(/^(#{1,6})([^\s#])/gm, '$1 $2')   // Fix header spacing
 
-  // Step 4: Remove filler phrases for conciseness
+  // Step 4: Enhanced filler phrase removal for more conversational tone
   const fillerPhrases = [
     /\bWell,?\s*/gi,
     /\bSo,?\s*/gi,
@@ -176,23 +203,32 @@ const formatAIResponse = (response) => {
     /\bAs an? (?:AI|assistant),?\s*/gi,
     /\bYou know,?\s*/gi,
     /\bLet me tell you,?\s*/gi,
-    /\bTo be honest,?\s*/gi
+    /\bTo be honest,?\s*/gi,
+    /\bLet me explain\b/gi,
+    /\bThe thing is\b/gi,
+    /\bHere's the deal\b/gi
   ];
-  
+
   fillerPhrases.forEach(phrase => {
     formatted = formatted.replace(phrase, '');
   });
 
-  // Step 5: Ensure proper capitalization
+  // Step 5: Ensure proper capitalization and add conversational elements
   formatted = formatted.trim();
   if (formatted && !formatted.charAt(0).match(/[A-Z#\-\*\[\d]/)) {
     formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 
-  // Step 6: Structure detection and standardization
+  // Step 6: Add better spacing between sections
+  formatted = formatted
+    .replace(/\n\n+/g, '\n\n')        // Ensure consistent double line breaks
+    .replace(/(\*\*.*?\*\*)\n/g, '$1\n\n')  // Add spacing after headers
+    .replace(/(\n-\s.*?)(\n\*\*)/g, '$1\n$2')  // Ensure spacing before new sections
+
+  // Step 7: Structure detection and standardization
   const sections = extractSections(formatted);
-  
-  // Step 7: Build standardized response structure
+
+  // Step 8: Build standardized response structure with better spacing
   return buildStructuredResponse(sections, formatted);
 };
 
@@ -222,11 +258,11 @@ const extractSections = (text) => {
 // Helper function to build structured response
 const buildStructuredResponse = (sections, originalText) => {
   const parts = [];
-  
-  // 1. Opening statement
-  // Removed TL;DR section
 
-  // 2. Key Points
+  // 1. Ensure greeting is present (will be added later in ensurePersonalizedGreeting)
+  // For now, we'll add a placeholder that gets replaced
+
+  // 2. Key Points - Enhanced with better formatting
   if (sections.keyPoints) {
     const keyPoints = extractBulletPoints(sections.keyPoints, 6);
     if (keyPoints.length > 0) {
@@ -234,7 +270,7 @@ const buildStructuredResponse = (sections, originalText) => {
       keyPoints.forEach(point => {
         parts.push(`- ${point}`);
       });
-      parts.push(''); // Add spacing
+      parts.push(''); // Double spacing between sections
     }
   } else {
     // Extract bullet points from original text
@@ -244,11 +280,11 @@ const buildStructuredResponse = (sections, originalText) => {
       bulletPoints.forEach(point => {
         parts.push(`- ${point}`);
       });
-      parts.push(''); // Add spacing
+      parts.push(''); // Double spacing
     }
   }
 
-  // 3. Next Steps (if available)
+  // 3. Next Steps (if available) - Enhanced formatting
   if (sections.nextSteps) {
     const steps = extractNumberedPoints(sections.nextSteps, 5);
     if (steps.length > 0) {
@@ -256,11 +292,11 @@ const buildStructuredResponse = (sections, originalText) => {
       steps.forEach((step, idx) => {
         parts.push(`${idx + 1}. ${step}`);
       });
-      parts.push(''); // Add spacing
+      parts.push(''); // Double spacing
     }
   }
 
-  // 4. Resources (if available)
+  // 4. Resources (if available) - Enhanced formatting
   if (sections.resources) {
     const resources = extractBulletPoints(sections.resources, 4);
     if (resources.length > 0) {
@@ -268,11 +304,11 @@ const buildStructuredResponse = (sections, originalText) => {
       resources.forEach(resource => {
         parts.push(`- ${resource}`);
       });
-      parts.push(''); // Add spacing
+      parts.push(''); // Double spacing
     }
   }
 
-  // 5. Clarifying question (always include)
+  // 5. Clarifying question (always include) - Enhanced with better questions
   if (sections.question) {
     const cleanQuestion = sections.question.trim().replace(/^[-\*\d\.]+\s*/, '');
     if (!cleanQuestion.endsWith('?')) {
@@ -284,11 +320,18 @@ const buildStructuredResponse = (sections, originalText) => {
     // Check if original text ends with a question
     const hasQuestion = /\?[^?]*$/.test(originalText);
     if (!hasQuestion) {
-      parts.push('**Question:** What specific aspect would you like me to explore further?');
+      const questions = [
+        'What specific aspect would you like me to explore further?',
+        'Which of these points interests you most?',
+        'Would you like me to elaborate on any particular area?',
+        'What would you like to know more about?'
+      ];
+      const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+      parts.push(`**Question:** ${randomQuestion}`);
     }
   }
 
-  // Fallback: If no structure was found, create a clean paragraph
+  // Fallback: If no structure was found, create a clean paragraph with better formatting
   if (parts.length <= 2) {
     const cleanText = originalText
       .split(/\n+/)
@@ -298,18 +341,19 @@ const buildStructuredResponse = (sections, originalText) => {
       .split(/\s+/)
       .slice(0, 150)  // Limit to 150 words
       .join(' ');
-    
+
     return `${cleanText}\n\n**Question:** What would you like to know more about?`;
   }
 
-  // Join all parts and clean up
+  // Join all parts with proper spacing
   let result = parts.join('\n');
-  
-  // Final cleanup
+
+  // Enhanced final cleanup for better spacing
   result = result
-    .replace(/\n{3,}/g, '\n\n')      // Max 2 consecutive newlines
+    .replace(/\n{4,}/g, '\n\n\n')    // Max 3 consecutive newlines for section breaks
     .replace(/^\s+|\s+$/g, '')       // Trim start and end
-    .replace(/\n\s*\n\s*$/g, '');    // Remove trailing empty lines
+    .replace(/\n\s*\n\s*$/g, '')     // Remove trailing empty lines
+    .replace(/(\*\*.*?\*\*)\n(?!\n)/g, '$1\n\n'); // Ensure double spacing after headers
 
   return result;
 };
@@ -347,19 +391,30 @@ const extractNumberedPoints = (text, maxPoints = 5) => {
 // Additional function to ensure proper name integration
 const ensurePersonalizedGreeting = (formattedResponse, userName) => {
   if (!userName || !formattedResponse) return formattedResponse;
-  
+
   // If response doesn't mention the user's name, add it to the beginning
   if (!formattedResponse.toLowerCase().includes(userName.toLowerCase())) {
+    const greetings = [
+      `**Hello ${userName}!** I'm excited to help you with your career journey.`,
+      `**Hi there, ${userName}!** Let's explore some great options for you.`,
+      `**Hey ${userName}!** I'm here to guide you through your career exploration.`,
+      `**Hi ${userName}!** Thanks for reaching out. Let's dive into this together.`,
+      `**Hello ${userName}!** I'm glad you're taking steps toward your future.`
+    ];
+
+    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+
+    // Check if response already starts with a greeting
     const firstLine = formattedResponse.split('\n')[0];
-    if (firstLine.startsWith('**Hi')) {
-      return formattedResponse.replace(
-        `**Hi ${userName}!`
-      );
+    if (firstLine.startsWith('**Hi') || firstLine.startsWith('**Hello') || firstLine.startsWith('**Hey')) {
+      // Replace existing greeting with personalized one
+      return formattedResponse.replace(firstLine, randomGreeting);
     } else {
-      return `**Hi ${userName}!**\n\n${formattedResponse}`;
+      // Add greeting at the beginning
+      return `${randomGreeting}\n\n${formattedResponse}`;
     }
   }
-  
+
   return formattedResponse;
 };
 
@@ -518,35 +573,53 @@ explore career options, make informed decisions, and develop plans to achieve th
 
 You are talking to ${userName}. Always address them by their first name in your responses.
 
-CRITICAL RESPONSE FORMATTING REQUIREMENTS:
-- ALWAYS structure your response with clear sections using **bold headers**
-- Use proper markdown formatting throughout
-- Keep responses concise (150-250 words maximum)
-- Use bullet points (-) for all lists
-- Use numbered lists (1., 2., 3.) for sequential steps
-- Add proper line breaks between sections
-- End with a clarifying question
+**CHATGPT-STYLE RESPONSE FORMATTING GUIDELINES:**
 
-MANDATORY RESPONSE STRUCTURE:
-1. Start with a brief, personalized greeting using their name
-2. Provide key points in bullet format
-3. Include next steps if applicable
-4. End with a specific question to continue the conversation
+**Greeting Style:**
+- Always start with a warm, personalized greeting like "**Hello [Name]!**" or "**Hi there, [Name]!**"
+- Make greetings conversational and friendly
+- Add a brief welcoming phrase after the greeting
 
-FORMATTING EXAMPLES:
-**Hi [Name]!** Brief summary of your advice.
+**Structure & Spacing:**
+- Keep responses VERY concise (100-200 words maximum)
+- NEVER write long paragraphs - break everything into short, digestible points
+- Use **double line breaks** between major sections for clear separation
+- Use **single line breaks** within sections for readability
+- Structure responses as: Greeting → Brief intro → Key points → Next steps → Question
+
+**Markdown Formatting:**
+- Use **bold** for section headers, key terms, and important emphasis
+- Use *italic* for subtle emphasis, specific concepts, or highlighting
+- Use bullet points (-) for ALL lists and key information
+- Use numbered lists (1., 2., 3.) for sequential steps or ordered information
+- Use proper headings with ## for major sections when needed
+- Use \`code\` formatting for technical terms, course names, or specific skills
+- Use > blockquotes for important tips or quotes
+- Ensure consistent formatting throughout the response
+
+**Content Style:**
+- Be supportive, encouraging, and empathetic
+- Provide personalized advice based on the user's interests, skills, and goals
+- Offer specific, actionable suggestions rather than generic advice
+- Share relevant resources and steps for skill development
+- Ask clarifying questions when needed to provide better guidance
+- Be honest about the challenges of different career paths while maintaining a positive outlook
+- Use conversational language like "I'd recommend..." or "You might enjoy..."
+
+**Example Response Structure:**
+**Hello [Name]!** I'm excited to help you explore your career options.
 
 **Key Points:**
-- First important point with specific details
-- Second point with actionable advice
-- Third point connecting to their interests
+- **Point 1:** Detailed explanation with *emphasis* on important aspects
+- **Point 2:** More specific advice with actionable steps
+- **Point 3:** Connection to your interests and goals
 
 **Next Steps:**
-1. Specific action they can take immediately
-2. Medium-term goal to work towards
-3. Long-term planning suggestion
+1. **Immediate action:** What you can do right away
+2. **Short-term goal:** Plan for the next few weeks
+3. **Long-term planning:** Bigger picture considerations
 
-**Question:** What aspect interests you most?
+**Question:** What aspect of this interests you most?
 
 Some guidelines for your responses:
 1. Be supportive, encouraging, and empathetic
