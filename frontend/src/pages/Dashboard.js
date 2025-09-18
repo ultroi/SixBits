@@ -306,22 +306,24 @@ const Dashboard = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-              <h2 className="text-2xl font-bold mb-2">
-                Welcome back, {user?.firstName}! 👋
+            <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-xl p-6 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+              <h2 className="text-2xl font-bold mb-2 relative z-10">
+                Hey {user?.firstName}, ready to explore? �
               </h2>
-              <p className="text-blue-100 mb-4">
-                {user?.class} • {user?.academicInterests?.join(', ')} • Age {user?.age}
+              <p className="text-blue-100 mb-4 relative z-10">
+                {user?.class} • Interests: {user?.academicInterests?.join(', ') || 'Exploring options'} • Age {user?.age}
               </p>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 relative z-10">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-5 w-5 text-green-300" />
-                  <span className="text-sm">Profile Complete</span>
+                  <span className="text-sm">Profile Set</span>
                 </div>
                 {!quizCompleted && (
                   <div className="flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-yellow-300" />
-                    <span className="text-sm">Quiz Pending</span>
+                    <Clock className="h-5 w-5 text-yellow-300 animate-pulse" />
+                    <span className="text-sm">Quiz Awaits!</span>
                   </div>
                 )}
               </div>
@@ -329,15 +331,22 @@ const Dashboard = () => {
 
             {/* Quick Actions */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Sparkles className="h-5 w-5 text-indigo-500 mr-2" />
+                Quick Actions
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {quickActions.map((action, index) => (
                   <Link
                     key={index}
                     to={action.path}
-                    className="group bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+                    className={`group bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:-translate-y-1 ${
+                      index % 2 === 0 ? 'hover:rotate-1' : 'hover:-rotate-1'
+                    }`}
                   >
-                    <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${
+                      index === 1 ? 'rounded-full' : index === 3 ? 'rounded-none' : ''
+                    }`}>
                       <action.icon className="h-6 w-6 text-white" />
                     </div>
                     <h4 className="font-semibold text-gray-900 mb-2">{action.title}</h4>
@@ -353,15 +362,22 @@ const Dashboard = () => {
 
             {/* AI Recommendations */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Recommendations</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <MessageSquare className="h-5 w-5 text-purple-500 mr-2" />
+                Personalized Picks for You
+              </h3>
               <div className="space-y-4">
                 {recommendations.map((rec, index) => (
-                  <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <div key={index} className={`bg-white rounded-xl p-6 shadow-sm border border-gray-200 ${
+                    index === 0 ? 'border-l-4 border-l-blue-500' : index === 1 ? 'border-l-4 border-l-green-500' : ''
+                  }`}>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                           {rec.type === 'course' ? (
                             <GraduationCap className="h-5 w-5 text-green-500" />
+                          ) : rec.type === 'stream' ? (
+                            <BookOpen className="h-5 w-5 text-blue-500" />
                           ) : (
                             <MapPin className="h-5 w-5 text-purple-500" />
                           )}
@@ -374,10 +390,10 @@ const Dashboard = () => {
                             <span className="text-sm font-medium text-gray-700">{rec.score}% Match</span>
                           </div>
                           <Link
-                            to={rec.type === 'course' ? '/courses' : '/colleges'}
-                            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                            to={rec.type === 'course' ? '/courses' : rec.type === 'stream' ? '/courses' : '/colleges'}
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
                           >
-                            View Details →
+                            Dive In →
                           </Link>
                         </div>
                       </div>
@@ -416,34 +432,35 @@ const Dashboard = () => {
             </div>
 
             {/* Progress Stats */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 relative">
+              <div className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full opacity-20"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Journey So Far</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Profile Completion</span>
+                    <span className="text-gray-600">Profile Setup</span>
                     <span className="font-medium">85%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }} />
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full animate-pulse" style={{ width: '85%' }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Courses Explored</span>
+                    <span className="text-gray-600">Courses Checked Out</span>
                     <span className="font-medium">3/10</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '30%' }} />
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="bg-gradient-to-r from-green-500 to-teal-600 h-2 rounded-full" style={{ width: '30%' }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Colleges Viewed</span>
+                    <span className="text-gray-600">Colleges Explored</span>
                     <span className="font-medium">1/5</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: '20%' }} />
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full" style={{ width: '20%' }} />
                   </div>
                 </div>
               </div>
@@ -451,23 +468,23 @@ const Dashboard = () => {
 
             {/* Quick Stats */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">At a Glance</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">12</div>
-                  <div className="text-sm text-gray-600">Courses Available</div>
+                  <div className="text-sm text-gray-600">Awesome Courses</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center p-3 bg-green-50 rounded-lg">
                   <div className="text-2xl font-bold text-green-600">8</div>
-                  <div className="text-sm text-gray-600">Nearby Colleges</div>
+                  <div className="text-sm text-gray-600">Local Colleges</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center p-3 bg-purple-50 rounded-lg">
                   <div className="text-2xl font-bold text-purple-600">5</div>
-                  <div className="text-sm text-gray-600">Active Events</div>
+                  <div className="text-sm text-gray-600">Upcoming Events</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
                   <div className="text-2xl font-bold text-orange-600">24/7</div>
-                  <div className="text-sm text-gray-600">AI Support</div>
+                  <div className="text-sm text-gray-600">AI Buddy</div>
                 </div>
               </div>
             </div>
