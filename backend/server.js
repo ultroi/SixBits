@@ -1,11 +1,22 @@
 const express = require('express');
+global.express = express;
 const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+global.mongoose = mongoose;
 const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
+
+const bcrypt = require('bcryptjs');
+global.bcrypt = bcrypt;
+
+const jwt = require('jsonwebtoken');
+global.jwt = jwt;
+
+const genAI = require('@google/generative-ai');
+global.genAI = genAI;
 
 // Prevent mongoose from buffering model operations on disconnected instances
 mongoose.set('bufferCommands', false);

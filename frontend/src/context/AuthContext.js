@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { authService } from '../services/api';
 import { toast } from 'react-toastify';
 
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Update user in context and localStorage (useful when other components fetch latest user)
-  const updateUser = (newUser) => {
+  const updateUser = useCallback((newUser) => {
     setUser(newUser);
     if (newUser) {
       localStorage.setItem('user', JSON.stringify(newUser));
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('user');
       setIsAuthenticated(false);
     }
-  };
+  }, []);
 
   // Register function
   const register = async (userData) => {

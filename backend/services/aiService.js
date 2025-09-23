@@ -266,12 +266,13 @@ Keep questions simple and age-appropriate.`;
     );
 
     let jsonText = response.response.text().trim();
-    
-    // Clean JSON response
-    jsonText = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '');
-    
-    const quizData = JSON.parse(jsonText);
-    return quizData.questions || [];
+    try {
+      const quizData = parseAIJson(jsonText);
+      return (quizData && quizData.questions) ? quizData.questions : [];
+    } catch (err) {
+      console.error('Failed to parse quiz JSON from AI response. Raw response:\n', jsonText);
+      throw err;
+    }
 
   } catch (error) {
     console.error('Quiz generation error:', error);
@@ -336,12 +337,13 @@ Focus on Indian education system, undergraduate courses, and practical career pa
     );
 
     let jsonText = response.response.text().trim();
-    
-    // Clean JSON response
-    jsonText = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '');
-    
-    const suggestions = JSON.parse(jsonText);
-    return suggestions;
+    try {
+      const suggestions = parseAIJson(jsonText);
+      return suggestions || {};
+    } catch (err) {
+      console.error('Failed to parse course suggestions JSON from AI response. Raw response:\n', jsonText);
+      throw err;
+    }
 
   } catch (error) {
     console.error('Course suggestion error:', error);
@@ -354,4 +356,126 @@ Focus on Indian education system, undergraduate courses, and practical career pa
 
     throw new Error('Failed to generate course suggestions');
   }
+};
+
+// Robust JSON extraction & parsing for AI responses
+const extractJsonSegment = (text) => {
+  if (!text || typeof text !== 'string') return null;
+
+  // Remove common fences and leading/trailing whitespace
+  let t = text.trim();
+  t = t.replace(/```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+  // Find first JSON object or array by matching brackets while skipping string literals
+  const openChars = ['{', '['];
+  const closeFor = { '{': '}', '[': ']' };
+
+  for (let startIdx = 0; startIdx < t.length; startIdx++) {
+    const ch = t[startIdx];
+    if (!openChars.includes(ch)) continue;
+
+    let stack = [ch];
+    let inString = false;
+    let stringChar = null;
+    let escape = false;
+
+    for (let i = startIdx + 1; i < t.length; i++) {
+      const c = t[i];
+
+      if (escape) { escape = false; continue; }
+      if (c === '\\') { escape = true; continue; }
+
+      if (inString) {
+        if (c === stringChar) {
+          inString = false;
+          stringChar = null;
+        }
+        continue;
+      }
+
+      if (c === '"' || c === "'") {
+        inString = true;
+        stringChar = c;
+        continue;
+      }
+
+      if (openChars.includes(c)) {
+        stack.push(c);
+        continue;
+      }
+
+      if (c === closeFor[stack[stack.length - 1]]) {
+        stack.pop();
+        if (stack.length === 0) {
+          // return the substring that represents the JSON
+          return t.slice(startIdx, i + 1).trim();
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+const sanitizeJsonLike = (raw) => {
+  if (!raw || typeof raw !== 'string') return raw;
+
+  let s = raw;
+  // Remove JS-style comments
+  s = s.replace(/\/\/.*$/gm, '');
+  s = s.replace(/\/\*[\s\S]*?\*\//gm, '');
+  // Replace trailing commas before } or ]
+  s = s.replace(/,\s*([}\]])/g, '$1');
+  // Normalize smart quotes
+  s = s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+  // Attempt to convert single-quoted keys/values to double quotes where it is likely JSON
+  // This is a best-effort fallback and may not be perfect for every case.
+  s = s.replace(/'(\\?[^'\\]*)'/g, '"$1"');
+
+  return s;
+};
+
+const parseAIJson = (text) => {
+  if (!text || typeof text !== 'string') return null;
+
+  // Try to extract the first JSON-like segment
+  let segment = extractJsonSegment(text);
+  if (!segment) {
+    // If we couldn't find a balanced segment, try to use the whole cleaned text
+    segment = text.trim();
+  }
+
+  // Attempt progressive parsing strategies
+  const attempts = [];
+
+  // 1) Direct parse
+  attempts.push(segment);
+  // 2) Remove fences if any (already done in extract, but double-ensure)
+  attempts.push(segment.replace(/(^```json\s*|```$)/g, '').trim());
+  // 3) Sanitized (remove comments, trailing commas, smart quotes)
+  attempts.push(sanitizeJsonLike(segment));
+
+  for (const candidate of attempts) {
+    if (!candidate) continue;
+    try {
+      return JSON.parse(candidate);
+    } catch (err) {
+      // continue to next attempt
+    }
+  }
+
+  // Last resort: try to find a JSON-looking substring and parse that
+  const fallbackMatch = segment.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (fallbackMatch) {
+    try {
+      return JSON.parse(sanitizeJsonLike(fallbackMatch[0]));
+    } catch (err) {
+      // give up
+    }
+  }
+
+  // If all attempts fail, throw a helpful error
+  const e = new Error('Unable to parse JSON from AI response');
+  e.raw = text;
+  throw e;
 };

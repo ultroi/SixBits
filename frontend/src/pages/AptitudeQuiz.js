@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -34,115 +34,154 @@ const AptitudeQuiz = () => {
   const [questionAnimation, setQuestionAnimation] = useState('');
   const navigate = useNavigate();
 
-  // Fetch personalized questions on component mount
+  // Prevent duplicate initialization (StrictMode double-mount) and unnecessary API calls
+  const initRanRef = useRef(false);
+  const generationInProgressRef = useRef(false);
+
   useEffect(() => {
-    const fetchQuestions = async () => {
+    if (initRanRef.current) return; // already initialized
+    initRanRef.current = true;
+
+    const init = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        setError(null);
-        
-        // Get current user
         const { user } = await authService.getCurrentUser();
-        
-        // Validate user exists and has ID
         if (!user || !user._id) {
-          console.error('User authentication failed:', { user, userId: user?._id });
+          console.error('User authentication failed:', { user });
           setError('User not authenticated. Please login again.');
           navigate('/login');
+          setLoading(false);
           return;
         }
-        
-        // Generate personalized quiz
-        const quizData = await quizService.generatePersonalizedQuiz(user._id);
-        
-        // Transform questions to match frontend format
-        const transformedQuestions = quizData.questions.map((q, index) => ({
-          id: index + 1,
-          question: q.question,
-          category: q.category,
-          options: q.options.map((option, optIndex) => ({
-            text: option,
-            value: option,
-            points: optIndex === q.correctAnswer ? 3 : (optIndex === (q.correctAnswer + 1) % 4 ? 2 : 1)
-          }))
-        }));
-        
-        setQuestions(transformedQuestions);
+
+        const userId = user._id;
+
+        // 1) If quiz completed flag exists locally, use local results and skip any network generation
+        const localCompleted = localStorage.getItem('quizCompleted');
+        const localResults = localStorage.getItem('quizResults');
+        if (localCompleted === 'true' && localResults) {
+          try {
+            const parsed = JSON.parse(localResults);
+            setResults(parsed);
+            setShowResults(true);
+
+            const cachedSuggestions = localStorage.getItem('courseSuggestions');
+            if (cachedSuggestions) {
+              try { setCourseSuggestions(JSON.parse(cachedSuggestions)); } catch (e) { localStorage.removeItem('courseSuggestions'); }
+            }
+
+            setLoading(false);
+            return; // skip any generation
+          } catch (err) {
+            console.error('Failed to parse local quiz results, will continue:', err);
+            localStorage.removeItem('quizResults');
+            localStorage.removeItem('quizCompleted');
+          }
+        }
+
+        // 2) If there's a recently cached generated quiz (24h), use it to avoid regen
+        const cacheKey = `personalizedQuiz_${userId}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            const age = Date.now() - (parsed.timestamp || 0);
+            const ONE_DAY = 24 * 60 * 60 * 1000;
+            if (parsed.data && age < ONE_DAY) {
+              const transformed = parsed.data.questions.map((q, index) => ({
+                id: index + 1,
+                question: q.question,
+                category: q.category,
+                options: q.options.map((option, optIndex) => ({ text: option, value: option, points: optIndex === q.correctAnswer ? 3 : (optIndex === (q.correctAnswer + 1) % 4 ? 2 : 1) }))
+              }));
+              setQuestions(transformed);
+              setLoading(false);
+              return;
+            } else {
+              localStorage.removeItem(cacheKey);
+            }
+          } catch (err) {
+            console.error('Failed to parse cached generated quiz, will regenerate:', err);
+            localStorage.removeItem(cacheKey);
+          }
+        }
+
+        // 3) Check server: if user already completed quiz, use server results
+        try {
+          const userQuizResults = await quizService.getUserQuizResults(userId);
+          if (userQuizResults.quizResults && userQuizResults.quizResults.length > 0) {
+            const latest = userQuizResults.quizResults[userQuizResults.quizResults.length - 1];
+            const frontendResults = { interests: {}, strengths: {}, personality: {} };
+            latest.interests?.forEach(i => { frontendResults.interests[i] = (frontendResults.interests[i] || 0) + 25; });
+            latest.strengths?.forEach(s => { frontendResults.strengths[s] = (frontendResults.strengths[s] || 0) + 25; });
+            latest.personalityTraits?.forEach(p => { frontendResults.personality[p] = (frontendResults.personality[p] || 0) + 25; });
+
+            setResults(frontendResults);
+            setShowResults(true);
+
+            try { localStorage.setItem('quizResults', JSON.stringify(frontendResults)); localStorage.setItem('quizCompleted', 'true'); } catch (e) { /* ignore */ }
+
+            // try to reuse cached suggestions
+            const storedSuggestions = localStorage.getItem('courseSuggestions');
+            if (storedSuggestions) {
+              try { setCourseSuggestions(JSON.parse(storedSuggestions)); } catch (e) { localStorage.removeItem('courseSuggestions'); }
+            } else {
+              try {
+                const suggestions = await courseService.getCourseSuggestions(frontendResults);
+                setCourseSuggestions(suggestions);
+                localStorage.setItem('courseSuggestions', JSON.stringify(suggestions));
+              } catch (e) { console.error('Failed to fetch course suggestions for server results:', e); }
+            }
+
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to fetch user quiz results from server:', err);
+          // continue to generation path
+        }
+
+        // 4) Finally, generate personalized quiz only if not already in progress
+        if (generationInProgressRef.current) {
+          setLoading(false);
+          return; // another tab/instance is generating
+        }
+
+        try {
+          generationInProgressRef.current = true;
+          const quizData = await quizService.generatePersonalizedQuiz(userId);
+          if (!quizData || !quizData.questions) throw new Error('Invalid quiz data');
+
+          const transformedQuestions = quizData.questions.map((q, index) => ({
+            id: index + 1,
+            question: q.question,
+            category: q.category,
+            options: q.options.map((option, optIndex) => ({ text: option, value: option, points: optIndex === q.correctAnswer ? 3 : (optIndex === (q.correctAnswer + 1) % 4 ? 2 : 1) }))
+          }));
+
+          setQuestions(transformedQuestions);
+
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: quizData }));
+          } catch (e) { console.error('Failed to cache generated quiz:', e); }
+        } catch (err) {
+          console.error('Failed to generate personalized quiz:', err);
+          setError('Failed to load personalized quiz. Please try again.');
+        } finally {
+          generationInProgressRef.current = false;
+          setLoading(false);
+        }
       } catch (err) {
-        console.error('Failed to fetch questions:', err);
-        setError('Failed to load personalized quiz. Please try again.');
-      } finally {
+        console.error('Quiz init error:', err);
+        setError('Failed to initialize quiz. Please try again.');
         setLoading(false);
       }
     };
 
-    fetchQuestions();
+    init();
   }, [navigate]);
-
-  // Check for existing quiz results on component mount
-  useEffect(() => {
-    const checkQuizStatus = async () => {
-      try {
-        // Get current user
-        const { user } = await authService.getCurrentUser();
-        
-        if (!user || !user._id) {
-          // Clear any old localStorage data for unauthenticated users
-          localStorage.removeItem('quizResults');
-          localStorage.removeItem('quizCompleted');
-          return;
-        }
-
-        // Check if user has completed quiz in database
-        const userQuizResults = await quizService.getUserQuizResults(user._id);
-        
-        if (userQuizResults.quizResults && userQuizResults.quizResults.length > 0) {
-          // User has completed quiz in database, show results
-          const latestResult = userQuizResults.quizResults[userQuizResults.quizResults.length - 1];
-          
-          // Transform database results to frontend format
-          const frontendResults = {
-            interests: {},
-            strengths: {},
-            personality: {}
-          };
-
-          latestResult.interests?.forEach(interest => {
-            frontendResults.interests[interest] = frontendResults.interests[interest] || 0;
-            frontendResults.interests[interest] += 25;
-          });
-
-          latestResult.strengths?.forEach(strength => {
-            frontendResults.strengths[strength] = frontendResults.strengths[strength] || 0;
-            frontendResults.strengths[strength] += 25;
-          });
-
-          latestResult.personalityTraits?.forEach(trait => {
-            frontendResults.personality[trait] = frontendResults.personality[trait] || 0;
-            frontendResults.personality[trait] += 25;
-          });
-
-          setResults(frontendResults);
-          setShowResults(true);
-          
-          // Update localStorage with database results
-          localStorage.setItem('quizResults', JSON.stringify(frontendResults));
-          localStorage.setItem('quizCompleted', 'true');
-        } else {
-          // User hasn't completed quiz, clear any stale localStorage data
-          localStorage.removeItem('quizResults');
-          localStorage.removeItem('quizCompleted');
-        }
-      } catch (err) {
-        console.error('Failed to check quiz status:', err);
-        // Clear localStorage on error to be safe
-        localStorage.removeItem('quizResults');
-        localStorage.removeItem('quizCompleted');
-      }
-    };
-
-    checkQuizStatus();
-  }, []);
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
@@ -198,6 +237,11 @@ const AptitudeQuiz = () => {
       try {
         const suggestions = await courseService.getCourseSuggestions(frontendResults);
         setCourseSuggestions(suggestions);
+        try {
+          localStorage.setItem('courseSuggestions', JSON.stringify(suggestions));
+        } catch (err) {
+          console.error('Failed to cache course suggestions:', err);
+        }
       } catch (error) {
         console.error('Failed to get course suggestions:', error);
         // Don't block the UI if suggestions fail
@@ -542,8 +586,7 @@ const AptitudeQuiz = () => {
                             </div>
                             <h5 className="font-semibold text-gray-900">{course.name}</h5>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{course.reason}</p>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm text-gray-700">
                             <strong>Career Prospects:</strong> {course.careerProspects}
                           </div>
                         </div>
@@ -566,8 +609,7 @@ const AptitudeQuiz = () => {
                             </div>
                             <h5 className="font-semibold text-gray-900">{course.name}</h5>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{course.reason}</p>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm text-gray-700">
                             <strong>Career Prospects:</strong> {course.careerProspects}
                           </div>
                         </div>
