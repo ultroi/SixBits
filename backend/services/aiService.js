@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash",
   generationConfig: {
-    maxOutputTokens: 300, // Reduced for concise responses
+    maxOutputTokens: 600, // Increased for detailed key points with explanations
     temperature: 0.7,
     topK: 30,
     topP: 0.8, 
@@ -17,25 +17,27 @@ const model = genAI.getGenerativeModel({
 const SYSTEM_CONTEXT = `
 You are Zariya, an AI educational counselor specializing in career guidance.
 
-**RESPONSE FORMAT RULES:**
-- Keep responses under 150 words
-- Always use bullet points for main information
-- Start with a brief greeting using user's name
-- Structure: Greeting → Key Points (bullets) → Next Step → Question
-- Use **bold** for headers and key terms
-- Be encouraging and practical
+**RESPONSE GUIDELINES:**
+- Start with a friendly greeting using the user's name
+- Provide key points in bullet form, but explain each point briefly
+- Give context and reasoning for each key point
+- Offer practical advice with explanations
+- End with an engaging question to continue the conversation
+- Keep responses conversational and user-friendly
+- Use **bold** for emphasis on key terms or important points
+- Be encouraging and supportive
 
 **Response Structure:**
 **Hi [Name]!** Brief welcoming line.
 
 **Key Points:**
-- Point 1 with specific advice
-- Point 2 with actionable step  
-- Point 3 with resource/tip
+- **Point 1:** Brief explanation of why this matters and what it means
+- **Point 2:** More details on actionable steps with context
+- **Point 3:** Additional tips or resources with reasoning
 
-**Next Step:** One clear action they can take.
+**Next Steps:** Suggest what they can do next with encouragement.
 
-**Question:** What would you like to explore next?
+**Question:** What would you like to explore further?
 
 Focus on:
 - Career exploration and planning
@@ -44,7 +46,7 @@ Focus on:
 - Practical next steps
 - Age-appropriate guidance
 
-Keep it simple, actionable, and encouraging.
+Make responses informative yet approachable, like a helpful mentor.
 `;
 
 // Get or create chat history
@@ -69,9 +71,9 @@ const formatChatHistory = (messages) => {
   }));
 };
 
-// Simple response formatter - focuses on bullet points and conciseness
+// Response formatter - encourages key points with explanations
 const formatResponse = (response, userName) => {
-  if (!response) return '**Hi!** Please ask me about your career interests and I\'ll help guide you.';
+  if (!response) return `**Hi ${userName || 'there'}!** I'm here to help with your career and educational questions. What would you like to talk about?`;
 
   let formatted = response.toString().trim();
 
@@ -83,20 +85,20 @@ const formatResponse = (response, userName) => {
     .replace(/^\s*[\*•]\s+/gm, '- ')
     .replace(/^\s*[-]\s*/gm, '- ');
 
-  // Ensure greeting with name
-  if (userName && !formatted.toLowerCase().includes(userName.toLowerCase())) {
+  // Ensure greeting with name if not present
+  if (userName && !formatted.toLowerCase().includes(`hi ${userName.toLowerCase()}`) && !formatted.toLowerCase().includes(userName.toLowerCase())) {
     formatted = `**Hi ${userName}!** ${formatted}`;
   }
 
   // Ensure it ends with a question if not present
   if (!formatted.includes('?')) {
-    formatted += '\n\n**Question:** What would you like to know more about?';
+    formatted += '\n\n**What would you like to explore next?**';
   }
 
-  // Limit length - keep only first 200 words
+  // Limit length - allow up to 400 words for detailed explanations
   const words = formatted.split(/\s+/);
-  if (words.length > 200) {
-    formatted = words.slice(0, 200).join(' ') + '...';
+  if (words.length > 400) {
+    formatted = words.slice(0, 400).join(' ') + '...';
   }
 
   return formatted;
