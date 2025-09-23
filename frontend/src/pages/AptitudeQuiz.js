@@ -16,7 +16,7 @@ import {
   Trophy,
   Zap
 } from 'lucide-react';
-import { quizService, authService } from '../services/api';
+import { quizService, authService, courseService } from '../services/api';
 
 const AptitudeQuiz = () => {
   const [questions, setQuestions] = useState([]);
@@ -26,6 +26,7 @@ const AptitudeQuiz = () => {
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState(null);
+  const [courseSuggestions, setCourseSuggestions] = useState(null);
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -192,6 +193,15 @@ const AptitudeQuiz = () => {
 
       setResults(frontendResults);
       setShowCelebration(true);
+      
+      // Fetch course suggestions
+      try {
+        const suggestions = await courseService.getCourseSuggestions(frontendResults);
+        setCourseSuggestions(suggestions);
+      } catch (error) {
+        console.error('Failed to get course suggestions:', error);
+        // Don't block the UI if suggestions fail
+      }
       
       // Add success notification
       setTimeout(() => {
@@ -509,16 +519,74 @@ const AptitudeQuiz = () => {
                 </div>
               </div>
 
-              <div className="flex justify-center">
+              {/* Course Suggestions */}
+              {courseSuggestions && (
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6 hover:shadow-lg transition-all duration-300">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <BookOpen className="w-6 h-6 text-green-500 mr-2 animate-pulse" />
+                    AI Course Recommendations
+                  </h3>
+                  
+                  {/* Top 3 Courses */}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
+                      <Trophy className="w-5 h-5 text-yellow-500 mr-2" />
+                      Top 3 Recommended Courses
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {courseSuggestions.topCourses?.map((course, index) => (
+                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-green-500">
+                          <div className="flex items-center mb-2">
+                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-green-600 font-bold text-sm">{index + 1}</span>
+                            </div>
+                            <h5 className="font-semibold text-gray-900">{course.name}</h5>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{course.reason}</p>
+                          <div className="text-xs text-gray-500">
+                            <strong>Career Prospects:</strong> {course.careerProspects}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Alternative Courses */}
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
+                      <Sparkles className="w-5 h-5 text-purple-500 mr-2" />
+                      Alternative Courses to Consider
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {courseSuggestions.alternativeCourses?.map((course, index) => (
+                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-purple-500">
+                          <div className="flex items-center mb-2">
+                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-purple-600 font-bold text-sm">A{index + 1}</span>
+                            </div>
+                            <h5 className="font-semibold text-gray-900">{course.name}</h5>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{course.reason}</p>
+                          <div className="text-xs text-gray-500">
+                            <strong>Career Prospects:</strong> {course.careerProspects}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-center space-x-4 mt-8">
                 <button
                   onClick={() => navigate('/courses')}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex-1 max-w-xs"
                 >
                   Explore Courses
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-colors flex-1 max-w-xs"
                 >
                   Back to Dashboard
                 </button>

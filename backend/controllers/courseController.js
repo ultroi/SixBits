@@ -1,4 +1,5 @@
 const Course = require('../models/Course');
+const aiService = require('../services/aiService');
 
 // Get all courses
 exports.getCourses = async (req, res) => {
@@ -41,6 +42,24 @@ exports.getCareerPaths = async (req, res) => {
       entrepreneurship: course.entrepreneurship
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get course suggestions based on quiz results
+exports.getCourseSuggestions = async (req, res) => {
+  try {
+    const { quizResults } = req.body;
+    const { academicInterests } = req.user;
+    
+    if (!quizResults) {
+      return res.status(400).json({ message: 'Quiz results are required' });
+    }
+
+    const suggestions = await aiService.suggestCourses(quizResults, academicInterests);
+    res.json(suggestions);
+  } catch (error) {
+    console.error('Course suggestion error:', error);
     res.status(500).json({ message: error.message });
   }
 };

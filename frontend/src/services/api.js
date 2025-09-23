@@ -100,4 +100,31 @@ export const collegeService = {
   },
 };
 
+// Course services
+export const courseService = {
+  // Get all courses
+  getCourses: async (params = {}) => {
+    const response = await api.get('/courses', { params });
+    return response.data;
+  },
+
+  // Get course by ID
+  getCourseById: async (id) => {
+    const response = await api.get(`/courses/${id}`);
+    return response.data;
+  },
+
+  // Get course suggestions based on quiz results
+  getCourseSuggestions: async (quizResults) => {
+    const response = await api.post('/courses/suggestions', { quizResults });
+    return response.data;
+  },
+
+  // Get career paths for a course
+  getCareerPaths: async (courseId) => {
+    const response = await api.get(`/courses/${courseId}/careers`);
+    return response.data;
+  },
+};
+
 export default api;

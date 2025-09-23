@@ -283,3 +283,73 @@ Keep questions simple and age-appropriate.`;
     throw new Error('Failed to generate quiz questions');
   }
 };
+
+// Suggest courses based on quiz results
+exports.suggestCourses = async (quizResults, academicInterests = []) => {
+  try {
+    const { interests, strengths, personality } = quizResults;
+
+    // Find top categories
+    const topInterest = Object.entries(interests).sort(([, a], [, b]) => b - a)[0];
+    const topStrength = Object.entries(strengths).sort(([, a], [, b]) => b - a)[0];
+    const topPersonality = Object.entries(personality).sort(([, a], [, b]) => b - a)[0];
+
+    const prompt = `Based on this student's aptitude quiz results and academic interests, suggest 3 top courses and 2 alternative courses they should consider.
+
+Quiz Results:
+- Top Interest: ${topInterest ? topInterest[0] : 'Not specified'}
+- Top Strength: ${topStrength ? topStrength[0] : 'Not specified'}  
+- Top Personality: ${topPersonality ? topPersonality[0] : 'Not specified'}
+
+Academic Interests: ${academicInterests.length > 0 ? academicInterests.join(', ') : 'Not specified'}
+
+Format as JSON:
+{
+  "topCourses": [
+    {
+      "name": "Course Name",
+      "reason": "Brief reason why this course matches their profile and academic interests",
+      "careerProspects": "Brief career outlook"
+    }
+  ],
+  "alternativeCourses": [
+    {
+      "name": "Alternative Course Name", 
+      "reason": "Brief reason for consideration based on their profile",
+      "careerProspects": "Brief career outlook"
+    }
+  ]
+}
+
+Focus on Indian education system, undergraduate courses, and practical career paths. Consider both quiz results and academic interests when making recommendations. Keep reasons concise.`;
+
+    const response = await retryWithBackoff(() => 
+      model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+        }
+      })
+    );
+
+    let jsonText = response.response.text().trim();
+    
+    // Clean JSON response
+    jsonText = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '');
+    
+    const suggestions = JSON.parse(jsonText);
+    return suggestions;
+
+  } catch (error) {
+    console.error('Course suggestion error:', error);
+    
+    if (error?.code === 429) {
+      const quotaError = new Error('Daily AI usage limit reached. Please try again tomorrow.');
+      quotaError.status = 429;
+      throw quotaError;
+    }
+
+    throw new Error('Failed to generate course suggestions');
+  }
+};
