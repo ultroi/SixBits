@@ -28,7 +28,7 @@ exports.getCourseById = async (req, res) => {
   }
 };
 
-// Get career paths for a course
+// Career paths for a course
 exports.getCareerPaths = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
