@@ -35,6 +35,7 @@ const quizRoutes = require('./routes/quiz');
 const collegeRoutes = require('./routes/college');
 const courseRoutes = require('./routes/course');
 const timelineRoutes = require('./routes/timeline');
+const educationNewsRoutes = require('./routes/educationNews');
 
 // Initialize app
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/timeline', timelineRoutes);
+app.use('/api/education-news', educationNewsRoutes);
 
 // Default route
 app.get('/', (req, res) => {

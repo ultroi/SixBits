@@ -32,7 +32,10 @@ const AptitudeQuiz = () => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [questionAnimation, setQuestionAnimation] = useState('');
+  const [activeCategory, setActiveCategory] = useState(null);
   const navigate = useNavigate();
+
+  const toggleActive = (cat) => setActiveCategory(prev => prev === cat ? null : cat);
 
   // Prevent duplicate initialization (StrictMode double-mount) and unnecessary API calls
   const initRanRef = useRef(false);
@@ -58,22 +61,53 @@ const AptitudeQuiz = () => {
 
         const userId = user._id;
 
-        // 1) If quiz completed flag exists locally, use local results and skip any network generation
+        // 1) If quiz completed flag exists locally, verify with server before using local results.
+        //    This prevents stale local results from blocking a retake when DB entries were removed.
         const localCompleted = localStorage.getItem('quizCompleted');
         const localResults = localStorage.getItem('quizResults');
         if (localCompleted === 'true' && localResults) {
           try {
             const parsed = JSON.parse(localResults);
-            setResults(parsed);
-            setShowResults(true);
 
-            const cachedSuggestions = localStorage.getItem('courseSuggestions');
-            if (cachedSuggestions) {
-              try { setCourseSuggestions(JSON.parse(cachedSuggestions)); } catch (e) { localStorage.removeItem('courseSuggestions'); }
+            // Check server to confirm the user still has saved quiz results.
+            try {
+              const serverResults = await quizService.getUserQuizResults(userId);
+              const serverHasResults = serverResults && Array.isArray(serverResults.quizResults) && serverResults.quizResults.length > 0;
+
+              if (serverHasResults) {
+                // Server has results -> safe to show cached frontend results
+                setResults(parsed);
+                setShowResults(true);
+
+                const cachedSuggestions = localStorage.getItem('courseSuggestions');
+                if (cachedSuggestions) {
+                  try { setCourseSuggestions(JSON.parse(cachedSuggestions)); } catch (e) { localStorage.removeItem('courseSuggestions'); }
+                }
+
+                setLoading(false);
+                return; // skip generation
+              } else {
+                // Server has no results: clear stale local cache and continue to generation
+                console.info('Local quiz result present but server has no results - clearing local cache to allow retake');
+                localStorage.removeItem('quizResults');
+                localStorage.removeItem('quizCompleted');
+                localStorage.removeItem('courseSuggestions');
+                // continue to generation flow
+              }
+            } catch (serverErr) {
+              // If server check fails (network issue), fall back to local cached results to avoid blocking user.
+              console.warn('Could not verify local quiz results with server, using local cache as fallback:', serverErr);
+              setResults(parsed);
+              setShowResults(true);
+
+              const cachedSuggestions = localStorage.getItem('courseSuggestions');
+              if (cachedSuggestions) {
+                try { setCourseSuggestions(JSON.parse(cachedSuggestions)); } catch (e) { localStorage.removeItem('courseSuggestions'); }
+              }
+
+              setLoading(false);
+              return;
             }
-
-            setLoading(false);
-            return; // skip any generation
           } catch (err) {
             console.error('Failed to parse local quiz results, will continue:', err);
             localStorage.removeItem('quizResults');
@@ -277,6 +311,89 @@ const AptitudeQuiz = () => {
     return () => clearInterval(timer);
   }, [handleSubmit]);
 
+  // Allow user to retake the quiz: clear cache/local results and regenerate a new personalized quiz
+  const handleRetake = useCallback(async () => {
+    try {
+      setLoading(true);
+      setShowResults(false);
+      setResults(null);
+      setCourseSuggestions(null);
+      setQuestions([]);
+      setCurrentQuestion(0);
+      setAnswers({});
+      setTimeLeft(1800);
+
+      const { user } = await authService.getCurrentUser();
+      if (!user || !user._id) {
+        setError('User not authenticated. Please login again.');
+        setLoading(false);
+        return;
+      }
+
+      const userId = user._id;
+      const cacheKey = `personalizedQuiz_${userId}`;
+
+      // Clear any local cache that could block regeneration
+      try {
+        localStorage.removeItem('quizResults');
+        localStorage.removeItem('quizCompleted');
+        localStorage.removeItem('courseSuggestions');
+        localStorage.removeItem(cacheKey);
+      } catch (e) {
+        console.warn('Failed to clear local storage during retake:', e);
+      }
+
+      if (generationInProgressRef.current) {
+        // If another tab is generating, wait a short while and try to fetch cached quiz
+        console.info('Generation already in progress in another tab/instance. Waiting briefly...');
+        setTimeout(async () => {
+          try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              const transformed = parsed.data.questions.map((q, index) => ({
+                id: index + 1,
+                question: q.question,
+                category: q.category,
+                options: q.options.map((option, optIndex) => ({ text: option, value: option, points: optIndex === q.correctAnswer ? 3 : (optIndex === (q.correctAnswer + 1) % 4 ? 2 : 1) }))
+              }));
+              setQuestions(transformed);
+              setLoading(false);
+              return;
+            }
+          } catch (err) { /* ignore */ }
+          setLoading(false);
+        }, 1200);
+        return;
+      }
+
+      try {
+        generationInProgressRef.current = true;
+        const quizData = await quizService.generatePersonalizedQuiz(userId);
+        if (!quizData || !quizData.questions) throw new Error('Invalid quiz data');
+
+        const transformedQuestions = quizData.questions.map((q, index) => ({
+          id: index + 1,
+          question: q.question,
+          category: q.category,
+          options: q.options.map((option, optIndex) => ({ text: option, value: option, points: optIndex === q.correctAnswer ? 3 : (optIndex === (q.correctAnswer + 1) % 4 ? 2 : 1) }))
+        }));
+
+        setQuestions(transformedQuestions);
+        try { localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: quizData })); } catch (e) { /* ignore */ }
+      } catch (err) {
+        console.error('Failed to regenerate quiz for retake:', err);
+        setError('Failed to regenerate quiz. Please try again.');
+      } finally {
+        generationInProgressRef.current = false;
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Retake error:', err);
+      setLoading(false);
+    }
+  }, []);
+
   const handleAnswer = (questionId, answer) => {
     setSelectedAnswer(answer);
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
@@ -391,6 +508,93 @@ const AptitudeQuiz = () => {
     // Helper to get label or fallback to key
     const getLabel = (key, labels) => labels[key] || key;
 
+  // Helper utilities used by the interactive result UI
+  const getMaxPercent = (obj) => {
+    const vals = Object.values(obj || {});
+    if (!vals || vals.length === 0) return 0;
+    return Math.max(...vals);
+  };
+
+  const getCategoryMap = (category, resultsObj) => {
+    switch (category) {
+      case 'interests': return resultsObj.interests || {};
+      case 'strengths': return resultsObj.strengths || {};
+      case 'personality': return resultsObj.personality || {};
+      default: return {};
+    }
+  };
+
+  const getLabelsForCategory = (category) => {
+    switch (category) {
+      case 'interests': return interestLabels;
+      case 'strengths': return strengthLabels;
+      case 'personality': return personalityLabels;
+      default: return {};
+    }
+  };
+
+  const getKeywordsForCategory = (category) => {
+    switch (category) {
+      case 'interests': return interestKeywords;
+      case 'personality': return personalityKeywords;
+      default: return {};
+    }
+  };
+
+  const getGradientForCategory = (category) => {
+    switch (category) {
+      case 'interests': return 'from-pink-500 to-red-500';
+      case 'strengths': return 'from-blue-500 to-indigo-500';
+      case 'personality': return 'from-green-500 to-teal-500';
+      default: return 'from-gray-500 to-gray-700';
+    }
+  };
+
+  // Simple animated circular ring component using SVG
+  const AnimatedRing = ({ label, value = 0, onClick, active, colorFrom, colorTo, icon }) => {
+    const size = 120;
+    const stroke = 10;
+    const radius = (size - stroke) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
+
+    return (
+      <div onClick={onClick} className={`bg-white rounded-xl p-4 shadow-md cursor-pointer transform transition-all duration-300 ${active ? 'scale-105 shadow-lg' : 'hover:scale-102'}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">{icon}</div>
+            <div className="text-sm font-medium text-gray-800">{label}</div>
+          </div>
+          <div className="text-sm text-gray-500">Top</div>
+        </div>
+        <div className="flex items-center justify-center">
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+            <defs>
+              <linearGradient id={`g-${label}`} x1="0%" x2="100%">
+                <stop offset="0%" stopColor={`var(--tw-gradient-from, currentColor)`} />
+              </linearGradient>
+            </defs>
+            <circle cx={size/2} cy={size/2} r={radius} stroke="#eee" strokeWidth={stroke} fill="none" />
+            <circle
+              cx={size/2}
+              cy={size/2}
+              r={radius}
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              stroke={`url(#g-${label})`}
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={offset}
+              transform={`rotate(-90 ${size/2} ${size/2})`}
+              fill="none"
+              className="transition-all duration-1000 ease-out"
+            />
+            <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" className="text-sm font-semibold" fill="#111">{value}%</text>
+          </svg>
+        </div>
+      </div>
+    );
+  };
+
   const topInterest = Object.entries(results.interests).sort(([, a], [, b]) => b - a)[0];
   const topStrength = Object.entries(results.strengths).sort(([, a], [, b]) => b - a)[0];
   const topPersonality = Object.entries(results.personality).sort(([, a], [, b]) => b - a)[0];
@@ -427,85 +631,120 @@ const AptitudeQuiz = () => {
                 <p className="text-gray-600 text-lg">Here are your aptitude assessment results</p>
               </div>
 
-              {/* Results Categories */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Interests */}
-                <div className="bg-gradient-to-br from-pink-50 to-red-50 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-pink-100 rounded-lg mr-3 animate-pulse">
-                      <Heart className="w-6 h-6 text-pink-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Interests</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {Object.entries(results.interests).map(([key, value]) => (
-                      <div key={key} className="flex justify-between items-center group">
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{getLabel(key, interestLabels)}</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-pink-500 to-red-500 h-3 rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${value}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{value}%</span>
-                        </div>
-                      </div>
-                    ))}
+              {/* Interactive Results Summary: animated rings + detail panel */}
+              {/* Helper: Animated ring component and interactive detail drawer */}
+              {
+                /* Inline subcomponents: AnimatedRing and CategoryDetail */
+              }
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Your Performance Overview</h3>
+                  <div className="flex items-center space-x-2">
+                    <button onClick={handleRetake} className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700">Retake</button>
                   </div>
                 </div>
 
-                {/* Strengths */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-blue-100 rounded-lg mr-3 animate-pulse">
-                      <Target className="w-6 h-6 text-blue-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Strengths</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {Object.entries(results.strengths).map(([key, value]) => (
-                      <div key={key} className="flex justify-between items-center group">
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{getLabel(key, strengthLabels)}</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${value}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{value}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* AnimatedRing component instances */}
+                  {/** AnimatedRing component defined inline below **/}
+                  <AnimatedRing
+                    label="Interests"
+                    value={getMaxPercent(results.interests)}
+                    details={results.interests}
+                    onClick={() => toggleActive('interests')}
+                    colorFrom="pink-500"
+                    colorTo="red-500"
+                    active={activeCategory === 'interests'}
+                    icon={<Heart className="w-5 h-5 text-pink-500" />}
+                  />
 
-                {/* Personality */}
-                <div className="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-green-100 rounded-lg mr-3 animate-pulse">
-                      <Brain className="w-6 h-6 text-green-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Personality</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {Object.entries(results.personality).map(([key, value]) => (
-                      <div key={key} className="flex justify-between items-center group">
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{getLabel(key, personalityLabels)}</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-green-500 to-teal-500 h-3 rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${value}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{value}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <AnimatedRing
+                    label="Strengths"
+                    value={getMaxPercent(results.strengths)}
+                    details={results.strengths}
+                    onClick={() => toggleActive('strengths')}
+                    colorFrom="blue-500"
+                    colorTo="indigo-500"
+                    active={activeCategory === 'strengths'}
+                    icon={<Target className="w-5 h-5 text-blue-500" />}
+                  />
+
+                  <AnimatedRing
+                    label="Personality"
+                    value={getMaxPercent(results.personality)}
+                    details={results.personality}
+                    onClick={() => toggleActive('personality')}
+                    colorFrom="green-500"
+                    colorTo="teal-500"
+                    active={activeCategory === 'personality'}
+                    icon={<Brain className="w-5 h-5 text-green-500" />}
+                  />
                 </div>
+              </div>
+
+              {/* Detail drawer */}
+              <div className="mb-8">
+                {activeCategory ? (
+                  <div className="bg-white rounded-xl p-6 shadow-md transition-all duration-300">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900 capitalize">{activeCategory} — detailed breakdown</h4>
+                        <p className="text-sm text-gray-600 mt-1"></p>
+                      </div>
+                      <div className="text-sm text-gray-500"></div>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {Object.entries(getCategoryMap(activeCategory, results)).map(([key, val]) => (
+                        <div key={key} className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="text-sm font-medium text-gray-800">{getLabel(key, getLabelsForCategory(activeCategory))}</div>
+                              <div className="text-sm text-gray-600">{val}%</div>
+                            </div>
+                            <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+                              <div
+                                className={`h-3 rounded-full bg-gradient-to-r ${getGradientForCategory(activeCategory)}`}
+                                style={{ width: `${val}%`, transition: 'width 900ms ease-out' }}
+                                onClick={() => {
+                                  const keywords = getKeywordsForCategory(activeCategory)[key] || [];
+                                  const text = `${getLabel(key, getLabelsForCategory(activeCategory))}: ${val}%. Keywords: ${keywords.join(', ')}`;
+                                  try { navigator.clipboard.writeText(text); alert('Keywords copied'); } catch (e) { alert('Copy failed'); }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl p-6 shadow-md">
+                    <h4 className="text-lg font-semibold text-gray-900">Overview & Recommendations</h4>
+                    <p className="text-sm text-gray-600 mt-2">Tap any of the circular cards above to inspect category-level details and copy keywords for quick sharing.</p>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {topInterest && (
+                        <div className="bg-indigo-50 p-4 rounded-lg">
+                          <div className="text-sm font-medium">Top Interest</div>
+                          <div className="font-semibold text-gray-900">{getLabel(topInterest[0], interestLabels)} — {topInterest[1]}%</div>
+                        </div>
+                      )}
+                      {topStrength && (
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <div className="text-sm font-medium">Top Strength</div>
+                          <div className="font-semibold text-gray-900">{getLabel(topStrength[0], strengthLabels)} — {topStrength[1]}%</div>
+                        </div>
+                      )}
+                      {topPersonality && (
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <div className="text-sm font-medium">Top Personality</div>
+                          <div className="font-semibold text-gray-900">{getLabel(topPersonality[0], personalityLabels)} — {topPersonality[1]}%</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Recommendations */}
@@ -618,21 +857,6 @@ const AptitudeQuiz = () => {
                   </div>
                 </div>
               )}
-
-              <div className="flex justify-center space-x-4 mt-8">
-                <button
-                  onClick={() => navigate('/courses')}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex-1 max-w-xs"
-                >
-                  Explore Courses
-                </button>
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-colors flex-1 max-w-xs"
-                >
-                  Back to Dashboard
-                </button>
-              </div>
             </div>
           </div>
         </div>

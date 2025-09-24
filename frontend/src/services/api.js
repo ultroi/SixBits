@@ -127,4 +127,17 @@ export const courseService = {
   },
 };
 
+// Education News services
+export const educationNewsService = {
+  // Get education news
+  // options: { limit: number (1..5), relaxed: boolean }
+  getEducationNews: async (options = {}) => {
+    const params = {};
+    if (options.limit) params.limit = options.limit;
+    if (options.relaxed) params.relaxed = options.relaxed ? '1' : '0';
+    const response = await api.get('/education-news', { params });
+    return response.data;
+  },
+};
+
 export default api;
