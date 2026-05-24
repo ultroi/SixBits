@@ -39,10 +39,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['10th', '11th', '12th', 'Graduate', 'Post-Graduate', 'Other']
     },
+    stream: {
+      type: String,
+      enum: ['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business', 'Other']
+    },
     academicInterests: [{
       type: String,
       enum: ['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business', 'Other']
     }],
+    preferredLanguage: {
+      type: String,
+      enum: ['hindi', 'english'],
+      default: 'english'
+    },
     quizResults: [{
       quizId: { type: mongoose.Schema.Types.Mixed, ref: 'Quiz' },
       score: Number,

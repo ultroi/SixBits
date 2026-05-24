@@ -1,6 +1,16 @@
 const jwt = global.jwt;
 const mongoose = global.mongoose;
 
+function isDbConnected() {
+  return mongoose.connection && mongoose.connection.readyState === 1;
+}
+
+function sendDbUnavailable(res) {
+  return res.status(503).json({
+    message: 'Database unavailable. Please configure a valid MongoDB connection and try again.'
+  });
+}
+
 // Helper to get User model bound to the active mongoose connection
 function getUserModel() {
   try {
@@ -28,8 +38,12 @@ function getUserModel() {
 // Register a new user
 exports.register = async (req, res) => {
   try {
+    if (!isDbConnected()) {
+      return sendDbUnavailable(res);
+    }
+
     const User = getUserModel();
-    const { firstName, lastName, email, password, age, gender, class: userClass, academicInterests, state, city } = req.body;
+      const { firstName, lastName, email, password, age, gender, class: userClass, academicInterests, state, city, stream, preferredLanguage } = req.body;
     
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -48,6 +62,8 @@ exports.register = async (req, res) => {
       gender,
       class: userClass,
       academicInterests,
+      stream,
+      preferredLanguage,
       location: {
         city,
         state
@@ -66,6 +82,10 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
+    if (!isDbConnected()) {
+      return sendDbUnavailable(res);
+    }
+
     const { email, password } = req.body;
     
     // Check if user exists
@@ -115,6 +135,10 @@ exports.login = async (req, res) => {
 // Get current user
 exports.getCurrentUser = async (req, res) => {
   try {
+    if (!isDbConnected()) {
+      return sendDbUnavailable(res);
+    }
+
     const User = getUserModel();
     const user = await User.findById(req.user._id).select('-password');
     res.status(200).json({ user });

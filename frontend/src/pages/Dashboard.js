@@ -361,7 +361,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative">
+    <div className="min-h-screen bg-gray-50 relative">
       {/* Confetti when celebrate true */}
       <ConfettiCanvas active={celebrate} />
 
@@ -375,7 +375,7 @@ const Dashboard = () => {
                 className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
                 aria-label="Reload dashboard"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
+                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
                   <Sparkles className="w-6 h-6 text-white animate-pulse" />
                 </div>
                 <span className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">Zariya</span>
@@ -403,7 +403,7 @@ const Dashboard = () => {
 
               <div className="relative profile-dropdown">
                 <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center space-x-3 group cursor-pointer" aria-haspopup="true" aria-expanded={profileOpen}>
-                  <div className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                  <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                     <span className="text-white font-medium text-sm">{user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || ''}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-700 hidden sm:block group-hover:text-indigo-600 transition-colors">{user?.firstName} {user?.lastName}</span>
@@ -413,7 +413,7 @@ const Dashboard = () => {
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-20 animate-fade-in">
                     <div className="p-4 border-b border-gray-200">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
                           <span className="text-white font-medium text-sm">{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
                         </div>
                         <div>
@@ -446,7 +446,7 @@ const Dashboard = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Welcome Section */}
-            <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-xl p-6 text-white relative overflow-hidden shadow-md">
+            <section className="bg-indigo-600 rounded-xl p-6 text-white relative overflow-hidden shadow-md">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12" />
 
@@ -521,7 +521,7 @@ const Dashboard = () => {
                       className={`group bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:-translate-y-1 ${index % 2 === 0 ? 'hover:rotate-1' : 'hover:-rotate-1'}`}
                       aria-label={action.title}
                     >
-                      <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                      <div className={`w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <action.icon className="h-6 w-6 text-white" />
                       </div>
 

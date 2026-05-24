@@ -18,6 +18,27 @@ global.jwt = jwt;
 const genAI = require('@google/generative-ai');
 global.genAI = genAI;
 
+function getMongoUri() {
+  const configuredUri = process.env.MONGODB_URI && process.env.MONGODB_URI.trim();
+
+  if (!configuredUri) {
+    return 'mongodb://127.0.0.1:27017/Zariya';
+  }
+
+  const looksLikePlaceholder =
+    configuredUri.includes('username:password@cluster.mongodb.net') ||
+    configuredUri.includes('<username>') ||
+    configuredUri.includes('<password>') ||
+    configuredUri.includes('<db_password>') ||
+    configuredUri.includes('your_mongodb_connection_string');
+
+  if (looksLikePlaceholder && (process.env.NODE_ENV !== 'production' || process.env.DEV_FALLBACK_MONGODB === '1')) {
+    return 'mongodb://127.0.0.1:27017/Zariya';
+  }
+
+  return configuredUri;
+}
+
 // Prevent mongoose from buffering model operations on disconnected instances
 mongoose.set('bufferCommands', false);
 
@@ -62,29 +83,49 @@ app.get('/', (req, res) => {
 
 // Connect to MongoDB and start server
 async function startServer() {
+  const allowStartWithoutDb =
+    process.env.NODE_ENV !== 'production' && process.env.DEV_ALLOW_NO_DB !== '0';
+
   try {
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      dbName: 'Zariya',
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
-      bufferCommands: false
-    });
-    
-    console.log('Connected to MongoDB');
+    const mongoUri = getMongoUri();
+
+    let dbConnected = false;
+
+    try {
+      // Connect to MongoDB
+      await mongoose.connect(mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        dbName: 'Zariya',
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        bufferCommands: false
+      });
+
+      dbConnected = true;
+      console.log(`Connected to MongoDB (${mongoUri.includes('127.0.0.1') ? 'local' : 'configured'} URI)`);
+    } catch (dbErr) {
+      if (!allowStartWithoutDb) {
+        throw dbErr;
+      }
+
+      console.warn('MongoDB connection failed. Continuing in DEV no-DB mode.');
+      console.warn(`Reason: ${dbErr.message}`);
+      console.warn('Set DEV_ALLOW_NO_DB=0 to enforce DB connection in development.');
+    }
     
     // Start Express server
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}${dbConnected ? '' : ' (no DB mode)'}`);
     });
     
     // Handle server shutdown - close MongoDB connection
     process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      console.log('MongoDB connection closed');
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed');
+      }
       process.exit(0);
     });
   } catch (err) {

@@ -1,29 +1,25 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Mail, Lock, User, Eye, EyeOff, Moon, Sun, Calendar, MapPin } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, Eye, EyeOff, Moon, Sun } from 'lucide-react';
 
 const Signup = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    age: '',
-    gender: '',
     class: '',
-    academicInterests: [],
-    state: 'Jammu and Kashmir',
-    city: ''
+    stream: '',
+    preferredLanguage: 'english'
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -55,49 +51,29 @@ const Signup = () => {
 
   const validate = () => {
     const newErrors = {};
-    
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-    
+
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
       newErrors.email = 'Invalid email address';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (!formData.age) {
-      newErrors.age = 'Age is required';
-    } else if (formData.age < 10 || formData.age > 100) {
-      newErrors.age = 'Age must be between 10 and 100';
-    }
+    if (!formData.class) newErrors.class = 'Class / Qualification is required';
+    if (!formData.stream) newErrors.stream = 'Stream is required';
+    if (!formData.preferredLanguage) newErrors.preferredLanguage = 'Preferred language is required';
 
-    if (!formData.gender) {
-      newErrors.gender = 'Gender is required';
-    }
-
-    if (!formData.class) {
-      newErrors.class = 'Class is required';
-    }
-
-    if (formData.academicInterests.length === 0) {
-      newErrors.academicInterests = 'Please select at least one academic interest';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -110,17 +86,19 @@ const Signup = () => {
     setLoading(true);
     
     try {
+      // Split full name into first and last (simple split on first space)
+      const nameParts = formData.fullName.trim().split(/\s+/);
+      const firstName = nameParts.shift() || '';
+      const lastName = nameParts.join(' ') || '';
+
       await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        firstName,
+        lastName,
         email: formData.email,
         password: formData.password,
-        age: parseInt(formData.age),
-        gender: formData.gender,
         class: formData.class,
-        academicInterests: formData.academicInterests,
-        state: formData.state,
-        city: formData.city
+        stream: formData.stream,
+        preferredLanguage: formData.preferredLanguage
       });
       navigate('/login');
     } catch (error) {
@@ -133,11 +111,11 @@ const Signup = () => {
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-indigo-50 via-white to-indigo-50'} flex flex-col justify-center py-12 sm:px-6 lg:px-8`}>
       {/* Zariya Logo */}
       <div className="absolute top-4 left-4">
-        <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+        <Link to="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</h1>
+          <h1 className="text-2xl font-bold text-indigo-600">Zariya</h1>
         </Link>
       </div>
 
@@ -166,54 +144,25 @@ const Signup = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl py-8 px-4 shadow-2xl sm:rounded-2xl sm:px-10 border border-gray-200/50 dark:border-gray-700/50">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  First Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    autoComplete="given-name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.firstName ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    placeholder="first name"
-                  />
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
                 </div>
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-500">{errors.firstName}</p>
-                )}
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.fullName ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="e.g. Rahul Sharma"
+                />
               </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    autoComplete="family-name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.lastName ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    placeholder="last name"
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-500">{errors.lastName}</p>
-                )}
-              </div>
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
+              )}
             </div>
 
             <div>
@@ -313,59 +262,9 @@ const Signup = () => {
             {/* Profile Information Section */}
             <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Profile Information</h3>
-              
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Age
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Calendar className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="age"
-                      name="age"
-                      type="number"
-                      min="10"
-                      max="100"
-                      value={formData.age}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.age ? 'border-red-500 focus:ring-red-500' : ''}`}
-                      placeholder="18"
-                    />
-                  </div>
-                  {errors.age && (
-                    <p className="mt-1 text-sm text-red-500">{errors.age}</p>
-                  )}
-                </div>
 
-                <div>
-                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Gender
-                  </label>
-                  <select
-                    id="gender"
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className={`block w-full px-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.gender ? 'border-red-500 focus:ring-red-500' : ''}`}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {errors.gender && (
-                    <p className="mt-1 text-sm text-red-500">{errors.gender}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label htmlFor="class" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Class
-                </label>
+              <div className="mt-2">
+                <label htmlFor="class" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class / Qualification</label>
                 <select
                   id="class"
                   name="class"
@@ -373,7 +272,7 @@ const Signup = () => {
                   onChange={handleChange}
                   className={`block w-full px-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.class ? 'border-red-500 focus:ring-red-500' : ''}`}
                 >
-                  <option value="">Select Class</option>
+                  <option value="">Select Class / Qualification</option>
                   <option value="10th">10th</option>
                   <option value="11th">11th</option>
                   <option value="12th">12th</option>
@@ -387,96 +286,45 @@ const Signup = () => {
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Academic Interests
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business'].map((interest) => (
-                    <label key={interest} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="academicInterests"
-                        value={interest}
-                        checked={formData.academicInterests.includes(interest)}
-                        onChange={handleChange}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{interest}</span>
-                    </label>
-                  ))}
-                </div>
-                {errors.academicInterests && (
-                  <p className="mt-2 text-sm text-red-500">{errors.academicInterests}</p>
+                <label htmlFor="stream" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stream</label>
+                <select
+                  id="stream"
+                  name="stream"
+                  value={formData.stream}
+                  onChange={handleChange}
+                  className={`block w-full px-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.stream ? 'border-red-500 focus:ring-red-500' : ''}`}
+                >
+                  <option value="">Select Stream</option>
+                  <option value="Arts">Arts</option>
+                  <option value="Science">Science</option>
+                  <option value="Commerce">Commerce</option>
+                  <option value="Vocational">Vocational</option>
+                  <option value="Engineering">Engineering</option>
+                  <option value="Medical">Medical</option>
+                  <option value="Law">Law</option>
+                  <option value="Business">Business</option>
+                  <option value="Other">Other</option>
+                </select>
+                {errors.stream && (
+                  <p className="mt-1 text-sm text-red-500">{errors.stream}</p>
                 )}
               </div>
 
-              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    State
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preferred Language</label>
+                <div className="flex space-x-4 mt-2">
+                  <label className="inline-flex items-center">
+                    <input type="radio" name="preferredLanguage" value="hindi" checked={formData.preferredLanguage === 'hindi'} onChange={handleChange} className="form-radio" />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Hindi</span>
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      id="state"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors`}
-                    >
-                      <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                      {/* Other states could be added here if required */}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    City
+                  <label className="inline-flex items-center">
+                    <input type="radio" name="preferredLanguage" value="english" checked={formData.preferredLanguage === 'english'} onChange={handleChange} className="form-radio" />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">English</span>
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.city ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    >
-                      <option value="">Select City</option>
-                      <option value="Srinagar">Srinagar</option>
-                      <option value="Jammu">Jammu</option>
-                      <option value="Baramulla">Baramulla</option>
-                      <option value="Anantnag">Anantnag</option>
-                      <option value="Kathua">Kathua</option>
-                      <option value="Udhampur">Udhampur</option>
-                      <option value="Samba">Samba</option>
-                      <option value="Kupwara">Kupwara</option>
-                      <option value="Bandipora">Bandipora</option>
-                      <option value="Pulwama">Pulwama</option>
-                      <option value="Shopian">Shopian</option>
-                      <option value="Kulgam">Kulgam</option>
-                      <option value="Rajouri">Rajouri</option>
-                      <option value="Poonch">Poonch</option>
-                      <option value="Doda">Doda</option>
-                      <option value="Kishtwar">Kishtwar</option>
-                      <option value="Reasi">Reasi</option>
-                      <option value="Ramban">Ramban</option>
-                      <option value="Udhampur">Udhampur</option>
-                      <option value="Katra">Katra</option>
-                      <option value="Sopore">Sopore</option>
-                      <option value="Kupwara">Kupwara</option>
-                      {/* Duplicates removed where appropriate; list covers major towns in J&K */}
-                    </select>
-                  </div>
-                  {errors.city && (
-                    <p className="mt-1 text-sm text-red-500">{errors.city}</p>
-                  )}
                 </div>
+                {errors.preferredLanguage && (
+                  <p className="mt-1 text-sm text-red-500">{errors.preferredLanguage}</p>
+                )}
               </div>
             </div>
 
@@ -484,7 +332,7 @@ const Signup = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex justify-center items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg flex justify-center items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

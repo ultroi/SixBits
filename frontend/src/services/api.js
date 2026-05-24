@@ -1,6 +1,23 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || '/api';
+const getDefaultApiUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+
+    if (isLocalHost) {
+      return 'http://localhost:5000/api';
+    }
+  }
+
+  return '/api';
+};
+
+const API_URL = getDefaultApiUrl();
 
 // Create axios instance
 const api = axios.create({
