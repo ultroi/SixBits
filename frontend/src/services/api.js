@@ -30,7 +30,7 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -47,9 +47,33 @@ export const authService = {
     return response.data;
   },
 
+  // Verify signup OTP and create account
+  verifySignupOtp: async ({ email, otp }) => {
+    const response = await api.post('/auth/verify-signup-otp', { email, otp });
+    return response.data;
+  },
+
+  // Resend signup OTP
+  resendSignupOtp: async (email) => {
+    const response = await api.post('/auth/resend-signup-otp', { email });
+    return response.data;
+  },
+
   // Login user
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  // Request password reset
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  // Reset password using token
+  resetPassword: async ({ token, password }) => {
+    const response = await api.post('/auth/reset-password', { token, password });
     return response.data;
   },
 

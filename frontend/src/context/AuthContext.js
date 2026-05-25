@@ -11,11 +11,22 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const getToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
+
+  const getActiveStorage = () => (localStorage.getItem('token') ? localStorage : sessionStorage);
+
+  const clearAuthStorage = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+  };
+
   // Check if user is logged in on page load
   useEffect(() => {
     const checkLoggedIn = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (token) {
           const { user } = await authService.getCurrentUser();
           setUser(user);
@@ -24,8 +35,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Auth check failed:', error);
         // Clear storage if token is invalid
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        clearAuthStorage();
       } finally {
         setLoading(false);
       }
@@ -38,11 +48,21 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       setLoading(true);
-      const data = await authService.login(credentials);
+      const { rememberMe = true, ...loginCredentials } = credentials;
+      const data = await authService.login(loginCredentials);
+      const storage = rememberMe ? localStorage : sessionStorage;
       
-      // Save token and user in local storage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Save token and user in the selected storage
+      storage.setItem('token', data.token);
+      storage.setItem('user', JSON.stringify(data.user));
+
+      if (rememberMe) {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
       
       setUser(data.user);
       setIsAuthenticated(true);
@@ -63,10 +83,11 @@ export const AuthProvider = ({ children }) => {
   const updateUser = useCallback((newUser) => {
     setUser(newUser);
     if (newUser) {
-      localStorage.setItem('user', JSON.stringify(newUser));
+      getActiveStorage().setItem('user', JSON.stringify(newUser));
       setIsAuthenticated(true);
     } else {
       localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
       setIsAuthenticated(false);
     }
   }, []);
@@ -76,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const data = await authService.register(userData);
-      toast.success('Registration successful! Please login.');
+      toast.success(data.message || 'OTP sent to your email.');
       return data;
     } catch (error) {
       console.error('Registration failed:', error);
@@ -90,8 +111,7 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearAuthStorage();
     setUser(null);
     setIsAuthenticated(false);
     toast.success('Logged out successfully');

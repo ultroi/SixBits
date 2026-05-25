@@ -26,6 +26,14 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters']
     },
+    passwordResetToken: {
+      type: String,
+      default: null
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null
+    },
     age: {
       type: Number,
       min: [10, 'Age must be at least 10'],
@@ -91,6 +99,8 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving to database
 userSchema.pre('save', async function(next) {
+  if (this._skipPasswordHash) return next();
+
   if (!this.isModified('password')) return next();
   
   try {

@@ -5,7 +5,11 @@ const auth = require('../middleware/auth');
 
 // Public routes
 router.post('/register', authController.register);
+router.post('/verify-signup-otp', authController.verifySignupOtp);
+router.post('/resend-signup-otp', authController.resendSignupOtp);
 router.post('/login', authController.login);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
 router.get('/me', auth, authController.getCurrentUser);

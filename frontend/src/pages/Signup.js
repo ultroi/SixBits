@@ -91,7 +91,7 @@ const Signup = () => {
       const firstName = nameParts.shift() || '';
       const lastName = nameParts.join(' ') || '';
 
-      await register({
+      const response = await register({
         firstName,
         lastName,
         email: formData.email,
@@ -100,7 +100,11 @@ const Signup = () => {
         stream: formData.stream,
         preferredLanguage: formData.preferredLanguage
       });
-      navigate('/login');
+      const verifyQuery = new URLSearchParams({ email: response.email || formData.email });
+      if (response.devOtp) {
+        verifyQuery.set('otp', response.devOtp);
+      }
+      navigate(`/verify-email?${verifyQuery.toString()}`);
     } catch (error) {
       // Error handling is done in the AuthContext
       setLoading(false);
