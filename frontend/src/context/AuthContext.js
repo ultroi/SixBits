@@ -71,7 +71,22 @@ export const AuthProvider = ({ children }) => {
       return data;
     } catch (error) {
       console.error('Login failed:', error);
-      const errorMsg = error.response?.data?.message || 'Login failed';
+      const status = error.response?.status;
+      const serverMsg = error.response?.data?.message;
+      let errorMsg = serverMsg || 'Login failed';
+
+      if (!error.response && error.request) {
+        errorMsg = 'Server not reachable. Backend run karo aur phir try karo.';
+      } else if (status === 401) {
+        errorMsg = serverMsg || 'Session invalid. Please login again.';
+      } else if (status === 404) {
+        errorMsg = 'Login API route not found. Backend restart karo.';
+      } else if (status === 503) {
+        errorMsg = serverMsg || 'Database unavailable. Please try again in a moment.';
+      } else if (status >= 500) {
+        errorMsg = serverMsg || 'Server error during login. Please try again.';
+      }
+
       toast.error(errorMsg);
       throw error;
     } finally {
@@ -109,6 +124,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = useCallback(async () => {
+    const { user } = await authService.getCurrentUser();
+    setUser(user);
+    setIsAuthenticated(true);
+    getActiveStorage().setItem('user', JSON.stringify(user));
+    return user;
+  }, []);
+
   // Logout function
   const logout = () => {
     clearAuthStorage();
@@ -125,6 +148,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         updateUser,
+        refreshUser,
         register,
         logout
       }}

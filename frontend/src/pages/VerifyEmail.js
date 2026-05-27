@@ -98,8 +98,8 @@ const VerifyEmail = () => {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                  readOnly
+                  className="block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none transition-colors cursor-not-allowed"
                   placeholder="email@example.com"
                   autoComplete="email"
                   required

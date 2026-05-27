@@ -205,21 +205,6 @@ REACT_APP_API_URL=http://localhost:5000/api
 - Remove `REACT_APP_API_URL` from frontend/.env (it will default to `/api`)
 - Use MongoDB Atlas for database (not local MongoDB)
 
-#### Quick Environment Switcher
-Use the provided helper scripts to quickly switch between environments:
-
-**Windows:**
-```cmd
-dev-switch.bat local   # For local development
-dev-switch.bat vercel  # For Vercel deployment
-```
-
-**Linux/Mac:**
-```bash
-./dev-switch.sh local   # For local development
-./dev-switch.sh vercel  # For Vercel deployment
-```
-
 ### Vercel Configuration
 The project includes `vercel.json` with the following configuration:
 - Frontend builds from `frontend/` directory

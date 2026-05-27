@@ -71,6 +71,26 @@ function hashValue(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
 }
 
+function getGravatarUrl(email) {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  if (!normalizedEmail) {
+    return '';
+  }
+
+  const emailHash = crypto.createHash('md5').update(normalizedEmail).digest('hex');
+  return `https://www.gravatar.com/avatar/${emailHash}?d=identicon&s=200`;
+}
+
+function buildUserResponse(user) {
+  if (!user) return null;
+
+  const userObject = typeof user.toObject === 'function' ? user.toObject() : { ...user };
+  return {
+    ...userObject,
+    avatarUrl: getGravatarUrl(userObject.email)
+  };
+}
+
 async function sendVerificationOtpEmail(email, otp) {
   const transporter = getMailerTransport();
 
@@ -159,21 +179,15 @@ exports.register = async (req, res) => {
       firstName,
       lastName,
       email,
-      password,
-      age,
-      gender,
-      class: userClass,
-      academicInterests,
-      state,
-      city,
-      stream,
-      preferredLanguage
+      password
     } = req.body;
+
+    const normalizedLastName = typeof lastName === 'string' ? lastName.trim() : '';
 
     const normalizedEmail = email && email.toLowerCase().trim();
 
-    if (!firstName || !lastName || !normalizedEmail || !password) {
-      return res.status(400).json({ message: 'First name, last name, email and password are required' });
+    if (!firstName || !normalizedEmail || !password) {
+      return res.status(400).json({ message: 'First name, email and password are required' });
     }
 
     if (password.length < 6) {
@@ -192,19 +206,9 @@ exports.register = async (req, res) => {
 
     await createOrUpdatePendingSignup(PendingSignup, normalizedEmail, {
       firstName,
-      lastName,
+      lastName: normalizedLastName,
       email: normalizedEmail,
       passwordHash,
-      age,
-      gender,
-      class: userClass,
-      academicInterests,
-      stream,
-      preferredLanguage,
-      location: {
-        city,
-        state
-      },
       otpHash,
       otpExpiresAt
     });
@@ -273,7 +277,23 @@ exports.login = async (req, res) => {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
-      email: user.email
+      email: user.email,
+      class: user.class,
+      currentStatus: user.currentStatus,
+      stream: user.stream,
+      preferredLanguage: user.preferredLanguage,
+      location: user.location,
+      academicInterests: user.academicInterests,
+      activities: user.activities,
+      careerAspirations: user.careerAspirations,
+      workStylePreference: user.workStylePreference,
+      learningStyle: user.learningStyle,
+      careerPriorities: user.careerPriorities,
+      careerGoal: user.careerGoal,
+      age: user.age,
+      gender: user.gender,
+      profileCompletion: calculateProfileCompletion(user),
+      avatarUrl: getGravatarUrl(user.email)
     };
     
     res.status(200).json({
@@ -325,16 +345,9 @@ exports.verifySignupOtp = async (req, res) => {
 
     const user = new User({
       firstName: pendingSignup.firstName,
-      lastName: pendingSignup.lastName,
+      lastName: pendingSignup.lastName || '',
       email: pendingSignup.email,
-      password: pendingSignup.passwordHash,
-      age: pendingSignup.age,
-      gender: pendingSignup.gender,
-      class: pendingSignup.class,
-      academicInterests: pendingSignup.academicInterests,
-      stream: pendingSignup.stream,
-      preferredLanguage: pendingSignup.preferredLanguage,
-      location: pendingSignup.location
+      password: pendingSignup.passwordHash
     });
 
     user._skipPasswordHash = true;
@@ -394,6 +407,55 @@ exports.resendSignupOtp = async (req, res) => {
 };
 
 // Get current user
+// Calculate profile completion percentage
+function calculateProfileCompletion(user) {
+  const profileFields = [
+    { name: 'firstName', required: true },
+    { name: 'lastName', required: true },
+    { name: 'age', required: true },
+    { name: 'gender', required: true },
+    { name: 'currentStatus', required: true },
+    { name: 'class', required: true },
+    { name: 'stream', required: true },
+    { name: 'academicInterests', required: true, isArray: true },
+    { name: 'activities', required: true, isArray: true },
+    { name: 'careerAspirations', required: true, isArray: true },
+    { name: 'workStylePreference', required: false },
+    { name: 'learningStyle', required: false },
+    { name: 'careerPriorities', required: false, isArray: true },
+    { name: 'careerGoal', required: false },
+    { name: 'location', required: false, isNested: true },
+    { name: 'quizResults', required: false, isArray: true }
+  ];
+
+  let filledCount = 0;
+  let totalRequired = 0;
+
+  profileFields.forEach(field => {
+    const value = field.isNested ? (user[field.name] && (user[field.name].city || user[field.name].state)) : user[field.name];
+    
+    // Check if field is filled
+    const isFilled = 
+      value !== null && 
+      value !== undefined && 
+      value !== '' && 
+      (field.isArray ? (Array.isArray(value) && value.length > 0) : true);
+
+    if (field.required) {
+      totalRequired++;
+      if (isFilled) filledCount++;
+    } else {
+      // Optional fields add to total but not required
+      totalRequired++;
+      if (isFilled) filledCount++;
+    }
+  });
+
+  // Calculate percentage (ensure minimum 5% and maximum 100%)
+  const percentage = totalRequired > 0 ? Math.ceil((filledCount / totalRequired) * 100) : 0;
+  return Math.min(Math.max(percentage, 5), 100);
+}
+
 exports.getCurrentUser = async (req, res) => {
   try {
     if (!isDbConnected()) {
@@ -402,10 +464,263 @@ exports.getCurrentUser = async (req, res) => {
 
     const User = getUserModel();
     const user = await User.findById(req.user._id).select('-password');
-    res.status(200).json({ user });
+    
+    // Calculate and include profile completion
+    const profileCompletion = calculateProfileCompletion(user);
+    const userResponse = buildUserResponse(user);
+    userResponse.profileCompletion = profileCompletion;
+    
+    res.status(200).json({ user: userResponse });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateCurrentUser = async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return sendDbUnavailable(res);
+    }
+
+    const User = getUserModel();
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const {
+      fullName,
+      firstName,
+      lastName,
+      class: userClass,
+      currentStatus,
+      stream,
+      preferredLanguage,
+      city,
+      state,
+      location,
+      academicInterests,
+      activities,
+      careerAspirations,
+      workStylePreference,
+      learningStyle,
+      careerPriorities,
+      careerGoal
+    } = req.body;
+
+    if (typeof fullName === 'string' && fullName.trim()) {
+      const nameParts = fullName.trim().split(/\s+/);
+      user.firstName = nameParts.shift() || user.firstName;
+      user.lastName = nameParts.join(' ') || user.lastName;
+    } else {
+      if (typeof firstName === 'string' && firstName.trim()) {
+        user.firstName = firstName.trim();
+      }
+
+      if (typeof lastName === 'string' && lastName.trim()) {
+        user.lastName = lastName.trim();
+      }
+    }
+
+    if (typeof userClass === 'string' && userClass) {
+      user.class = userClass;
+    }
+
+    if (typeof currentStatus === 'string' && currentStatus) {
+      user.currentStatus = currentStatus;
+    }
+
+    if (typeof stream === 'string' && stream) {
+      user.stream = stream;
+    }
+
+    if (typeof preferredLanguage === 'string' && preferredLanguage) {
+      user.preferredLanguage = preferredLanguage;
+    }
+
+    if (Array.isArray(academicInterests)) {
+      user.academicInterests = academicInterests.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (Array.isArray(activities)) {
+      user.activities = activities.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (Array.isArray(careerAspirations)) {
+      user.careerAspirations = careerAspirations.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof workStylePreference === 'string') {
+      user.workStylePreference = workStylePreference.trim();
+    }
+
+    if (typeof learningStyle === 'string') {
+      user.learningStyle = learningStyle.trim();
+    }
+
+    if (Array.isArray(careerPriorities)) {
+      user.careerPriorities = careerPriorities.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof careerGoal === 'string') {
+      user.careerGoal = careerGoal.trim();
+    }
+
+    const nextCity = typeof city === 'string'
+      ? city.trim()
+      : typeof location?.city === 'string'
+        ? location.city.trim()
+        : typeof user.location?.city === 'string'
+          ? user.location.city
+          : '';
+
+    const nextState = typeof state === 'string'
+      ? state.trim()
+      : typeof location?.state === 'string'
+        ? location.state.trim()
+        : typeof user.location?.state === 'string'
+          ? user.location.state
+          : '';
+
+    const nextCoordinates = Array.isArray(location?.coordinates) && location.coordinates.length === 2
+      ? location.coordinates
+      : Array.isArray(user.location?.coordinates?.coordinates) && user.location.coordinates.coordinates.length === 2
+        ? user.location.coordinates.coordinates
+        : null;
+
+    if (nextCity || nextState || nextCoordinates) {
+      if (!user.location) {
+        user.location = {};
+      }
+
+      if (nextCity) {
+        user.location.city = nextCity;
+      }
+
+      if (nextState) {
+        user.location.state = nextState;
+      }
+
+      if (nextCoordinates) {
+        user.location.coordinates = {
+          type: 'Point',
+          coordinates: nextCoordinates
+        };
+      }
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-password');
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: buildUserResponse(updatedUser)
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.changeEmail = async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return sendDbUnavailable(res);
+    }
+
+    const { newEmail, currentPassword } = req.body;
+
+    if (!newEmail || !currentPassword) {
+      return res.status(400).json({ message: 'New email and current password are required' });
+    }
+
+    const normalizedEmail = String(newEmail).toLowerCase().trim();
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ message: 'Please enter a valid email' });
+    }
+
+    const User = getUserModel();
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    if (user.email === normalizedEmail) {
+      return res.status(400).json({ message: 'New email must be different from current email' });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email is already in use by another account' });
+    }
+
+    user.email = normalizedEmail;
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-password');
+
+    return res.status(200).json({
+      message: 'Email updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Change email error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return sendDbUnavailable(res);
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const User = getUserModel();
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const isSamePassword = await user.comparePassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({ message: 'New password must be different from current password' });
+    }
+
+    user.password = newPassword;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    return res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 

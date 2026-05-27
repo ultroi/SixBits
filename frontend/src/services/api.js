@@ -82,6 +82,24 @@ export const authService = {
     const response = await api.get('/auth/me');
     return response.data;
   },
+
+  // Update current user profile
+  updateCurrentUser: async (profileData) => {
+    const response = await api.patch('/auth/me', profileData);
+    return response.data;
+  },
+
+  // Change email for logged in user
+  changeEmail: async ({ newEmail, currentPassword }) => {
+    const response = await api.patch('/auth/me/email', { newEmail, currentPassword });
+    return response.data;
+  },
+
+  // Change password for logged in user
+  changePassword: async ({ currentPassword, newPassword }) => {
+    const response = await api.patch('/auth/me/password', { currentPassword, newPassword });
+    return response.data;
+  },
 };
 
 // Chat services
@@ -181,4 +199,93 @@ export const educationNewsService = {
   },
 };
 
+// AI services
+export const aiService = {
+  // Get career matches from backend AI/GROQ proxy
+  getCareerMatches: async (profile) => {
+    const response = await api.post('/ai/career-matches', profile || {});
+    return response.data && response.data.matches ? response.data.matches : [];
+  },
+};
+
 export default api;
+
+  // Timeline services
+  export const timelineService = {
+    // Get user's timeline events
+    getTimeline: async (userId) => {
+      const response = await api.get(`/timeline/user/${userId}`);
+      return response.data;
+    },
+
+    // Get upcoming events
+    getUpcomingEvents: async (userId) => {
+      const response = await api.get(`/timeline/user/${userId}/upcoming`);
+      return response.data;
+    },
+
+    // Create new timeline entry
+    createTimelineEntry: async (timelineData) => {
+      const response = await api.post('/timeline', timelineData);
+      return response.data;
+    },
+
+    // Update timeline entry
+    updateTimelineEntry: async (id, timelineData) => {
+      const response = await api.put(`/timeline/${id}`, timelineData);
+      return response.data;
+    },
+
+    // Delete timeline entry
+    deleteTimelineEntry: async (id) => {
+      const response = await api.delete(`/timeline/${id}`);
+      return response.data;
+    },
+  };
+
+// Notification services
+export const notificationService = {
+  // Get all notifications
+  getNotifications: async (limit = 20, skip = 0) => {
+    const response = await api.get('/notifications', {
+      params: { limit, skip },
+    });
+    return response.data;
+  },
+
+  // Get unread notification count
+  getUnreadCount: async () => {
+    const response = await api.get('/notifications/unread/count');
+    return response.data;
+  },
+
+  // Mark notification as read
+  markAsRead: async (notificationId) => {
+    const response = await api.put(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  // Mark all notifications as read
+  markAllAsRead: async () => {
+    const response = await api.put('/notifications/read/all');
+    return response.data;
+  },
+
+  // Delete a notification
+  deleteNotification: async (notificationId) => {
+    const response = await api.delete(`/notifications/${notificationId}`);
+    return response.data;
+  },
+
+  // Delete all notifications
+  deleteAllNotifications: async () => {
+    const response = await api.delete('/notifications/all');
+    return response.data;
+  },
+
+  // Create a notification (admin use)
+  createNotification: async (notificationData) => {
+    const response = await api.post('/notifications', notificationData);
+    return response.data;
+  },
+};

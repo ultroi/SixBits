@@ -9,7 +9,7 @@ const pendingSignupSchema = new mongoose.Schema(
     },
     lastName: {
       type: String,
-      required: true,
+      default: '',
       trim: true
     },
     email: {
@@ -26,6 +26,10 @@ const pendingSignupSchema = new mongoose.Schema(
     age: Number,
     gender: String,
     class: String,
+    currentStatus: {
+      type: String,
+      default: 'School Student'
+    },
     stream: String,
     academicInterests: [String],
     preferredLanguage: {

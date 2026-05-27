@@ -14,7 +14,8 @@ import {
   Check,
   Sparkles,
   Trophy,
-  Zap
+  Zap,
+  Users
 } from 'lucide-react';
 import { quizService, authService, courseService } from '../services/api';
 
@@ -27,13 +28,19 @@ const AptitudeQuiz = () => {
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState(null);
   const [courseSuggestions, setCourseSuggestions] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [questionAnimation, setQuestionAnimation] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const navigate = useNavigate();
+
+  const parseApiError = (error) => {
+    if (!error) return 'An error occurred. Please try again.';
+    return error.response?.data?.message || error.message || 'An error occurred. Please try again.';
+  };
 
   const toggleActive = (cat) => setActiveCategory(prev => prev === cat ? null : cat);
 
@@ -202,7 +209,7 @@ const AptitudeQuiz = () => {
           } catch (e) { console.error('Failed to cache generated quiz:', e); }
         } catch (err) {
           console.error('Failed to generate personalized quiz:', err);
-          setError('Failed to load personalized quiz. Please try again.');
+          setError(parseApiError(err));
         } finally {
           generationInProgressRef.current = false;
           setLoading(false);
@@ -299,6 +306,8 @@ const AptitudeQuiz = () => {
   }, [answers, questions]);
 
   useEffect(() => {
+    if (!quizStarted) return undefined;
+
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -308,8 +317,9 @@ const AptitudeQuiz = () => {
         return prev - 1;
       });
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [handleSubmit]);
+  }, [handleSubmit, quizStarted]);
 
   // Allow user to retake the quiz: clear cache/local results and regenerate a new personalized quiz
   const handleRetake = useCallback(async () => {
@@ -321,7 +331,8 @@ const AptitudeQuiz = () => {
       setQuestions([]);
       setCurrentQuestion(0);
       setAnswers({});
-      setTimeLeft(1800);
+      setQuizStarted(false);
+      setTimeLeft(0);
 
       const { user } = await authService.getCurrentUser();
       if (!user || !user._id) {
@@ -383,16 +394,23 @@ const AptitudeQuiz = () => {
         try { localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: quizData })); } catch (e) { /* ignore */ }
       } catch (err) {
         console.error('Failed to regenerate quiz for retake:', err);
-        setError('Failed to regenerate quiz. Please try again.');
+        setError(parseApiError(err));
       } finally {
         generationInProgressRef.current = false;
         setLoading(false);
       }
     } catch (err) {
       console.error('Retake error:', err);
+      setError(parseApiError(err));
       setLoading(false);
     }
   }, []);
+
+  const handleStartQuiz = () => {
+    const totalSeconds = Math.min(3600, Math.max(questions.length * 90, 600));
+    setTimeLeft(totalSeconds);
+    setQuizStarted(true);
+  };
 
   const handleAnswer = (questionId, answer) => {
     setSelectedAnswer(answer);
@@ -432,8 +450,27 @@ const AptitudeQuiz = () => {
 
   const getProgressPercentage = () => ((currentQuestion + 1) / questions.length) * 100;
 
+  const formatCategoryName = (category) => {
+    switch (category) {
+      case 'logical': return 'Logical / Analytical';
+      case 'numerical': return 'Numerical / Reasoning';
+      case 'career_preference': return 'Career Preference';
+      case 'decision_making': return 'Decision-making';
+      case 'work_style': return 'Work-style Alignment';
+      case 'interests': return 'Interests';
+      case 'strengths': return 'Strengths';
+      case 'personality': return 'Personality';
+      default: return category ? category.replace(/_/g, ' ') : 'General';
+    }
+  };
+
   const getCategoryIcon = (category) => {
     switch (category) {
+      case 'logical': return <Brain className="w-5 h-5" />;
+      case 'numerical': return <TrendingUp className="w-5 h-5" />;
+      case 'career_preference': return <BookOpen className="w-5 h-5" />;
+      case 'decision_making': return <ArrowRight className="w-5 h-5" />;
+      case 'work_style': return <Users className="w-5 h-5" />;
       case 'interests': return <Heart className="w-5 h-5" />;
       case 'strengths': return <Target className="w-5 h-5" />;
       case 'personality': return <Brain className="w-5 h-5" />;
@@ -443,6 +480,11 @@ const AptitudeQuiz = () => {
 
   const getCategoryColor = (category) => {
     switch (category) {
+      case 'logical': return 'from-blue-500 to-indigo-500';
+      case 'numerical': return 'from-yellow-400 to-orange-500';
+      case 'career_preference': return 'from-teal-500 to-cyan-500';
+      case 'decision_making': return 'from-purple-500 to-violet-500';
+      case 'work_style': return 'from-green-500 to-emerald-500';
       case 'interests': return 'from-pink-500 to-rose-500';
       case 'strengths': return 'from-blue-500 to-indigo-500';
       case 'personality': return 'from-green-500 to-teal-500';
@@ -879,18 +921,30 @@ const AptitudeQuiz = () => {
 
   // Error state
   if (error) {
+    const needsProfileUpdate = error.toLowerCase().includes('complete your profile');
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to Load Quiz</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Try Again
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {needsProfileUpdate && (
+              <button
+                onClick={() => navigate('/settings')}
+                className="px-6 py-3 bg-white text-indigo-700 border border-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors"
+              >
+                Complete Profile
+              </button>
+            )}
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -904,6 +958,75 @@ const AptitudeQuiz = () => {
           <div className="text-gray-500 text-6xl mb-4">📝</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">No Questions Available</h2>
           <p className="text-gray-600">Unable to generate personalized questions at this time.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!quizStarted) {
+    const topicCounts = questions.reduce((counts, question) => {
+      const category = question.category || 'general';
+      counts[category] = (counts[category] || 0) + 1;
+      return counts;
+    }, {});
+
+    const topics = Object.entries(topicCounts).map(([category, count]) => ({
+      category,
+      label: formatCategoryName(category),
+      count,
+    }));
+
+    const estimatedMinutes = Math.max(10, Math.ceil(questions.length * 90 / 60));
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="max-w-2xl mx-auto flex min-h-[calc(100vh-4rem)] items-center px-4 py-6 sm:px-6 lg:px-8">
+          <div className="w-full rounded-[32px] bg-white shadow-2xl p-5 sm:p-7 overflow-hidden">
+            <div className="grid gap-3">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Quiz Overview</h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  A short career aptitude assessment built from your profile. Review the quiz details below and then begin.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Questions</div>
+                  <div className="mt-3 text-3xl font-bold text-gray-900">{questions.length}</div>
+                </div>
+                <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Approx. time</div>
+                  <div className="mt-3 text-3xl font-bold text-gray-900">{estimatedMinutes} min</div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {topics.slice(0, 4).map((topic) => (
+                  <div key={topic.category} className="rounded-3xl border border-gray-200 bg-white p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{topic.label}</div>
+                    <div className="mt-2 text-2xl font-semibold text-gray-900">{topic.count}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-4">
+                <h3 className="text-base font-semibold text-indigo-900">What to expect</h3>
+                <div className="mt-3 grid gap-2 text-sm text-gray-600">
+                  <div>• 4-option multiple-choice questions</div>
+                  <div>• Suitable for your qualification and profile</div>
+                  <div>• Mix of reasoning, numbers, career preference and decision-making</div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleStartQuiz}
+                className="w-full rounded-3xl bg-indigo-600 px-5 py-4 text-base font-semibold text-white hover:bg-indigo-700 transition-colors"
+              >
+                Start Assessment
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

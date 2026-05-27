@@ -57,6 +57,8 @@ const collegeRoutes = require('./routes/college');
 const courseRoutes = require('./routes/course');
 const timelineRoutes = require('./routes/timeline');
 const educationNewsRoutes = require('./routes/educationNews');
+const aiRoutes = require('./routes/ai');
+const notificationRoutes = require('./routes/notification');
 
 // Initialize app
 const app = express();
@@ -75,6 +77,8 @@ app.use('/api/colleges', collegeRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/timeline', timelineRoutes);
 app.use('/api/education-news', educationNewsRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Default route
 app.get('/', (req, res) => {

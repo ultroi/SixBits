@@ -182,7 +182,7 @@ exports.generatePersonalizedQuiz = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Generate personalized questions using AI
+    // Generate personalized questions using AI or QuizAPI
     const questions = await aiService.generatePersonalizedQuiz(user);
 
     // Create a temporary quiz object (not saved to database)

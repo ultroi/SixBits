@@ -10,10 +10,7 @@ const Signup = () => {
     fullName: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    class: '',
-    stream: '',
-    preferredLanguage: 'english'
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -22,23 +19,8 @@ const Signup = () => {
   const [darkMode, setDarkMode] = useState(true);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    if (type === 'checkbox') {
-      if (checked) {
-        setFormData(prev => ({
-          ...prev,
-          academicInterests: [...prev.academicInterests, value]
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          academicInterests: prev.academicInterests.filter(interest => interest !== value)
-        }));
-      }
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
     
     // Clear error when user starts typing in a field
     if (errors[name]) {
@@ -70,10 +52,6 @@ const Signup = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (!formData.class) newErrors.class = 'Class / Qualification is required';
-    if (!formData.stream) newErrors.stream = 'Stream is required';
-    if (!formData.preferredLanguage) newErrors.preferredLanguage = 'Preferred language is required';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -95,10 +73,7 @@ const Signup = () => {
         firstName,
         lastName,
         email: formData.email,
-        password: formData.password,
-        class: formData.class,
-        stream: formData.stream,
-        preferredLanguage: formData.preferredLanguage
+        password: formData.password
       });
       const verifyQuery = new URLSearchParams({ email: response.email || formData.email });
       if (response.devOtp) {
@@ -261,75 +236,6 @@ const Signup = () => {
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
               )}
-            </div>
-
-            {/* Profile Information Section */}
-            <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Profile Information</h3>
-
-              <div className="mt-2">
-                <label htmlFor="class" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class / Qualification</label>
-                <select
-                  id="class"
-                  name="class"
-                  value={formData.class}
-                  onChange={handleChange}
-                  className={`block w-full px-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.class ? 'border-red-500 focus:ring-red-500' : ''}`}
-                >
-                  <option value="">Select Class / Qualification</option>
-                  <option value="10th">10th</option>
-                  <option value="11th">11th</option>
-                  <option value="12th">12th</option>
-                  <option value="Graduate">Graduate</option>
-                  <option value="Post-Graduate">Post-Graduate</option>
-                  <option value="Other">Other</option>
-                </select>
-                {errors.class && (
-                  <p className="mt-1 text-sm text-red-500">{errors.class}</p>
-                )}
-              </div>
-
-              <div className="mt-6">
-                <label htmlFor="stream" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stream</label>
-                <select
-                  id="stream"
-                  name="stream"
-                  value={formData.stream}
-                  onChange={handleChange}
-                  className={`block w-full px-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.stream ? 'border-red-500 focus:ring-red-500' : ''}`}
-                >
-                  <option value="">Select Stream</option>
-                  <option value="Arts">Arts</option>
-                  <option value="Science">Science</option>
-                  <option value="Commerce">Commerce</option>
-                  <option value="Vocational">Vocational</option>
-                  <option value="Engineering">Engineering</option>
-                  <option value="Medical">Medical</option>
-                  <option value="Law">Law</option>
-                  <option value="Business">Business</option>
-                  <option value="Other">Other</option>
-                </select>
-                {errors.stream && (
-                  <p className="mt-1 text-sm text-red-500">{errors.stream}</p>
-                )}
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preferred Language</label>
-                <div className="flex space-x-4 mt-2">
-                  <label className="inline-flex items-center">
-                    <input type="radio" name="preferredLanguage" value="hindi" checked={formData.preferredLanguage === 'hindi'} onChange={handleChange} className="form-radio" />
-                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Hindi</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input type="radio" name="preferredLanguage" value="english" checked={formData.preferredLanguage === 'english'} onChange={handleChange} className="form-radio" />
-                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">English</span>
-                  </label>
-                </div>
-                {errors.preferredLanguage && (
-                  <p className="mt-1 text-sm text-red-500">{errors.preferredLanguage}</p>
-                )}
-              </div>
             </div>
 
             <div>

@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     },
     lastName: {
       type: String,
-      required: [true, 'Last name is required'],
+      default: '',
       trim: true
     },
     email: {
@@ -47,14 +47,50 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['10th', '11th', '12th', 'Graduate', 'Post-Graduate', 'Other']
     },
+    currentStatus: {
+      type: String,
+      default: 'School Student',
+      enum: ['School Student', 'College Student', 'Working Professional', 'Career Switcher']
+    },
     stream: {
       type: String,
       enum: ['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business', 'Other']
     },
     academicInterests: [{
       type: String,
-      enum: ['Arts', 'Science', 'Commerce', 'Vocational', 'Engineering', 'Medical', 'Law', 'Business', 'Other']
+      trim: true,
+      default: ''
     }],
+    activities: [{
+      type: String,
+      trim: true,
+      default: ''
+    }],
+    careerAspirations: [{
+      type: String,
+      trim: true,
+      default: ''
+    }],
+    workStylePreference: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    learningStyle: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    careerPriorities: [{
+      type: String,
+      trim: true,
+      default: ''
+    }],
+    careerGoal: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     preferredLanguage: {
       type: String,
       enum: ['hindi', 'english'],

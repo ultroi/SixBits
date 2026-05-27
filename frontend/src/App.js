@@ -11,6 +11,7 @@ import AptitudeQuiz from './pages/AptitudeQuiz';
 import CourseExplorer from './pages/CourseExplorer';
 import CollegeDirectory from './pages/CollegeDirectory';
 import TimelineManager from './pages/TimelineManager';
+import Settings from './pages/Settings';
 import PrivateRoute from './components/PrivateRoute';
 import { useAuth } from './context/AuthContext';
 
@@ -94,6 +95,14 @@ function App() {
           element={
             <PrivateRoute>
               <ChatInterface />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            <PrivateRoute>
+              <Settings />
             </PrivateRoute>
           } 
         />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Plus, Trash2, Sparkles, MessageSquare } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Plus, Trash2, Sparkles, MessageSquare, Paperclip, User, Bot, ArrowRight } from 'lucide-react';
 import { chatService } from '../services/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -41,6 +42,41 @@ const ChatInterface = () => {
       ];
 
   const [showQuickReplies, setShowQuickReplies] = useState(true);
+
+  const emptySuggestions = [
+    'Recommend career paths',
+    'Compare colleges',
+    'Build study roadmap',
+    'Find entrance exams',
+  ];
+
+  const activeThread = threads.find((thread) => thread.id === activeThreadId);
+
+  const formatThreadDate = (date) => {
+    const today = new Date();
+    const target = new Date(date);
+    const isSameDay =
+      today.getFullYear() === target.getFullYear() &&
+      today.getMonth() === target.getMonth() &&
+      today.getDate() === target.getDate();
+
+    return isSameDay ? 'Today' : 'Previous chats';
+  };
+
+  const groupedThreads = threads.reduce(
+    (accumulator, thread) => {
+      const timestamp = thread.messages?.[0]?.timestamp || new Date();
+      const groupName = formatThreadDate(timestamp);
+      accumulator[groupName].push(thread);
+      return accumulator;
+    },
+    { Today: [], 'Previous chats': [] }
+  );
+
+  const messageMotion = {
+    hidden: { opacity: 0, y: 10, scale: 0.99 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: 'easeOut' } },
+  };
 
   useEffect(() => {
     const welcomeMessageContent =
@@ -166,223 +202,360 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col overflow-hidden font-sans">
-      {/* HEADER */}
-      <div className="fixed top-0 left-0 right-0 z-20 backdrop-blur-md bg-white/70 border-b border-gray-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 flex justify-between items-center h-14">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 group"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Sparkles className="w-6 h-6 text-white" />
+    <div className="flex h-[100dvh] overflow-hidden bg-[#F8FAFC] text-[#111827] font-sans">
+      <aside className="hidden w-[280px] shrink-0 border-r border-[#ECECF3] bg-[#FAFAFC] lg:flex lg:flex-col">
+        <div className="border-b border-[#ECECF3] px-5 py-4">
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-3 text-left">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D5EF8] to-[#8B5CF6] shadow-sm">
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Zariya
-            </h1>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6D5EF8]">Zariya</p>
+              <h1 className="text-[15px] font-semibold text-[#111827]">AI Career Counselor</h1>
+            </div>
           </button>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={createNewThread}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 text-white px-4 py-2 rounded-lg font-medium shadow-md flex items-center gap-2 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Chat</span>
-            </button>
-
-            {threads.length > 1 && (
-              <button
-                onClick={() => deleteThread(activeThreadId)}
-                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete</span>
-              </button>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* BODY */}
-      <div className="flex-1 max-w-5xl mx-auto w-full flex flex-col mt-14 px-4 pb-4">
-        {/* Thread Selector */}
-        {threads.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {threads.slice(0, 5).map((thread) => (
-              <button
-                key={thread.id}
-                onClick={() => {
-                  setActiveThreadId(thread.id);
-                  setMessages(thread.messages);
-                }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
-                  thread.id === activeThreadId
-                    ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                    : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'
-                }`}
-              >
-                <MessageSquare className="w-4 h-4" />
-                {thread.title}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-3 px-5 py-4">
+          <button
+            onClick={createNewThread}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#6D5EF8] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#5f52f0] hover:shadow-md"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </button>
+        </div>
 
-        {/* Messages */}
-        <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-200 relative">
-          <div className="h-[calc(100vh-230px)] overflow-y-auto p-6 space-y-5 chat-scroll">
-            {messages.map((message) => {
-              // Skip welcome message if user has sent a message
-              if (message.id === 1 && message.sender === 'bot' && messages.some(m => m.sender === 'user')) {
-                return null;
-              }
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.sender === 'user'
-                      ? 'justify-end'
-                      : message.id === 1
-                      ? 'justify-center'
-                      : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-lg ${
-                      message.id === 1 ? 'text-center' : ''
-                    }`}
-                  >
-                    <div
-                      className={`rounded-2xl px-4 py-3 shadow-sm transition-all ${
-                        message.sender === 'user'
-                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
-                          : message.id === 1
-                          ? 'bg-gradient-to-r from-indigo-100 to-purple-100 border border-indigo-200 text-gray-800 px-6 py-5 font-medium'
-                          : 'bg-gray-50 border border-gray-200 text-gray-800'
-                      }`}
-                    >
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          // Custom styling for headings
-                          h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-4 text-indigo-700">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-base font-semibold mb-2 mt-3 text-indigo-600">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-sm font-medium mb-1 mt-2 text-indigo-500">{children}</h3>,
-                          
-                          // Custom styling for paragraphs
-                          p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
-                          
-                          // Custom styling for lists
-                          ul: ({ children }) => <ul className="mb-2 ml-4 space-y-1">{children}</ul>,
-                          ol: ({ children }) => <ol className="mb-2 ml-4 space-y-1">{children}</ol>,
-                          li: ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
-                          
-                          // Custom styling for strong/bold
-                          strong: ({ children }) => <strong className="font-bold text-indigo-700">{children}</strong>,
-                          
-                          // Custom styling for emphasis/italic
-                          em: ({ children }) => <em className="italic text-indigo-600">{children}</em>,
-                          
-                          // Custom styling for code
-                          code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
-                          
-                          // Custom styling for code blocks
-                          pre: ({ children }) => <pre className="bg-gray-100 p-3 rounded-lg mb-2 overflow-x-auto text-xs">{children}</pre>,
-                          
-                          // Custom styling for blockquotes
-                          blockquote: ({ children }) => <blockquote className="border-l-4 border-indigo-300 pl-4 italic text-gray-600 mb-2">{children}</blockquote>,
-                          
-                          // Custom styling for links
-                          a: ({ children, href }) => <a href={href} className="text-indigo-600 hover:text-indigo-800 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                          
-                          // Custom styling for tables
-                          table: ({ children }) => <div className="overflow-x-auto mb-2"><table className="min-w-full border-collapse border border-gray-300">{children}</table></div>,
-                          th: ({ children }) => <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-semibold text-left">{children}</th>,
-                          td: ({ children }) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
-                      <div className="flex justify-end mt-2 text-xs text-gray-400">
-                        {formatTime(message.timestamp)}
-                      </div>
-                    </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="space-y-5">
+            {Object.entries(groupedThreads).map(([label, groupThreads]) =>
+              groupThreads.length > 0 ? (
+                <div key={label}>
+                  <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6B7280]">{label}</p>
+                  <div className="space-y-1">
+                    {groupThreads.map((thread) => {
+                      const isActive = thread.id === activeThreadId;
+                      return (
+                        <div
+                          key={thread.id}
+                          className={`group flex items-center gap-2 rounded-2xl px-3 py-2.5 transition-all duration-200 ${
+                            isActive ? 'bg-[#F3F0FF] shadow-sm' : 'hover:bg-white hover:shadow-sm'
+                          }`}
+                        >
+                          <button
+                            onClick={() => {
+                              setActiveThreadId(thread.id);
+                              setMessages(thread.messages);
+                            }}
+                            className={`flex min-w-0 flex-1 items-center gap-3 text-left ${
+                              isActive ? 'text-[#5B4CF4]' : 'text-[#374151]'
+                            }`}
+                          >
+                            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${isActive ? 'bg-white text-[#6D5EF8]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
+                              <MessageSquare className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">{thread.title}</p>
+                              <p className="truncate text-[12px] text-[#6B7280]">{thread.messages?.length || 0} messages</p>
+                            </div>
+                          </button>
+
+                          {threads.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => deleteThread(thread.id)}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-[#9CA3AF] opacity-0 transition-all duration-200 hover:bg-white hover:text-[#EF4444] group-hover:opacity-100"
+                              aria-label={`Delete ${thread.title}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-
-            {isTyping && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-600 flex gap-2 items-center">
-                  <span>Zariya is thinking</span>
-                  <span className="flex gap-1">
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce delay-150"></span>
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce delay-300"></span>
-                  </span>
-                </div>
-              </div>
+              ) : null
             )}
-
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Quick Replies */}
-        {showQuickReplies && (
-          <div className="mt-3">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Questions</h3>
-            <div className="flex flex-wrap gap-2">
-              {quickReplies.map((reply, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setInput(reply);
-                    setTimeout(() => handleSend(), 10);
-                  }}
-                  className="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition-all shadow-sm"
-                >
-                  {reply}
-                </button>
-              ))}
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F8FAFC]">
+        <header className="sticky top-0 z-20 border-b border-[#ECECF3] bg-white/85 backdrop-blur-xl">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#374151] lg:hidden"
+              >
+                <Sparkles className="h-5 w-5" />
+              </button>
+              <div className="min-w-0">
+                <h2 className="truncate text-[15px] font-semibold text-[#111827] sm:text-lg">
+                  {activeThread?.title || 'How can Zariya help you today?'}
+                </h2>
+                <p className="hidden text-sm text-[#6B7280] sm:block">Personalized career guidance</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-2 text-sm font-medium text-[#374151] sm:flex">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#6D5EF8]" />
+                Zariya AI
+              </div>
+              <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 sm:flex">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                Online
+              </div>
             </div>
           </div>
-        )}
+        </header>
 
-        {/* Input */}
-        <div className="mt-4 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-xl shadow-md p-3 flex items-end gap-3 sticky bottom-0">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              if (textareaRef.current) {
-                textareaRef.current.style.height = 'auto';
-                textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-              }
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            className="flex-1 resize-none bg-transparent border-0 focus:ring-0 outline-none px-2 py-2 text-sm max-h-48 overflow-hidden"
-            rows="1"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className={`p-3 rounded-lg ${
-              !input.trim() || isLoading
-                ? 'bg-gray-200 cursor-not-allowed'
-                : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 shadow-md text-white'
-            }`}
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </div>
+        <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="mx-auto flex w-full max-w-[850px] min-h-0 flex-1 flex-col px-4 pb-[150px] pt-6 sm:px-6 lg:px-0">
+            <div className="flex-1 overflow-y-auto chat-scroll">
+              <AnimatePresence mode="popLayout">
+                {messages.length === 1 && messages[0]?.id === 1 && !messages.some((message) => message.sender === 'user') ? (
+                  <motion.div
+                    key="empty-state"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex min-h-[calc(100vh-220px)] flex-col items-center justify-center px-4 text-center"
+                  >
+                    <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[#E5E7EB] bg-white shadow-sm">
+                      <Sparkles className="h-10 w-10 text-[#6D5EF8]" />
+                    </div>
+                    <h2 className="mt-6 text-[32px] font-bold tracking-tight text-[#111827]">How can Zariya help you today?</h2>
+                    <p className="mt-3 max-w-2xl text-[16px] leading-7 text-[#6B7280]">
+                      Get personalized career guidance, college recommendations, and study planning support.
+                    </p>
+
+                    <div className="mt-8 grid w-full max-w-3xl gap-3 sm:grid-cols-2">
+                      {emptySuggestions.map((item) => (
+                        <motion.button
+                          key={item}
+                          whileHover={{ y: -3, scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => {
+                            setInput(item);
+                            setTimeout(() => handleSend(), 10);
+                          }}
+                          className="rounded-3xl border border-[#E5E7EB] bg-white p-4 text-left text-sm font-medium text-[#111827] shadow-sm transition-all duration-200 hover:border-[#C4B5FD] hover:shadow-md"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span>{item}</span>
+                            <ArrowRight className="h-4 w-4 text-[#6D5EF8]" />
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-4 py-2">
+                    {messages.map((message, index) => {
+                      if (message.id === 1 && message.sender === 'bot' && messages.some((m) => m.sender === 'user')) {
+                        return null;
+                      }
+
+                      const isUser = message.sender === 'user';
+                      const isWelcome = message.id === 1;
+
+                      return (
+                        <motion.div
+                          key={message.id}
+                          variants={messageMotion}
+                          initial="hidden"
+                          animate="show"
+                          className={`flex ${isUser ? 'justify-end' : 'justify-start'} ${isWelcome ? 'justify-center' : ''}`}
+                        >
+                          <div className={`flex max-w-[92%] items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} ${isWelcome ? 'max-w-3xl flex-col items-center' : ''}`}>
+                            {!isUser && !isWelcome && (
+                              <div className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6D5EF8] to-[#8B5CF6] text-white shadow-sm">
+                                <Bot className="h-5 w-5" />
+                              </div>
+                            )}
+
+                            <div className={`${isWelcome ? 'w-full text-center' : 'w-full max-w-[760px]'}`}>
+                              {!isWelcome && (
+                                <div className={`mb-1 flex items-center gap-2 text-[13px] text-[#6B7280] ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                  <span className="font-medium text-[#111827]">{isUser ? 'You' : 'Zariya'}</span>
+                                  <span>•</span>
+                                  <span>{formatTime(message.timestamp)}</span>
+                                </div>
+                              )}
+
+                              <div
+                                className={`rounded-[20px] px-5 py-4 text-[16px] leading-7 shadow-sm ${
+                                  isUser
+                                    ? 'bg-gradient-to-r from-[#6D5EF8] to-[#8B5CF6] text-white shadow-[0_10px_25px_rgba(109,94,248,0.18)]'
+                                    : isWelcome
+                                    ? 'border border-[#E5E7EB] bg-white text-[#111827] shadow-sm'
+                                    : 'border border-[#E5E7EB] bg-white text-[#111827] shadow-[0_6px_20px_rgba(0,0,0,0.04)]'
+                                }`}
+                              >
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    h1: ({ children }) => <h1 className="mb-3 text-2xl font-bold text-[#111827]">{children}</h1>,
+                                    h2: ({ children }) => <h2 className="mb-2 text-xl font-semibold text-[#111827]">{children}</h2>,
+                                    h3: ({ children }) => <h3 className="mb-2 text-lg font-semibold text-[#111827]">{children}</h3>,
+                                    p: ({ children }) => <p className="mb-3 leading-7 last:mb-0">{children}</p>,
+                                    ul: ({ children }) => <ul className="mb-3 ml-5 list-disc space-y-1">{children}</ul>,
+                                    ol: ({ children }) => <ol className="mb-3 ml-5 list-decimal space-y-1">{children}</ol>,
+                                    li: ({ children }) => <li className="leading-7">{children}</li>,
+                                    strong: ({ children }) => <strong className="font-semibold text-[#111827]">{children}</strong>,
+                                    em: ({ children }) => <em className="italic text-[#5B4CF4]">{children}</em>,
+                                    code: ({ children }) => <code className="rounded bg-[#F3F4F6] px-1.5 py-0.5 text-[13px]">{children}</code>,
+                                    pre: ({ children }) => <pre className="mb-3 overflow-x-auto rounded-2xl bg-[#F8FAFC] p-4 text-[13px]">{children}</pre>,
+                                    blockquote: ({ children }) => <blockquote className="mb-3 border-l-4 border-[#C4B5FD] pl-4 italic text-[#6B7280]">{children}</blockquote>,
+                                    a: ({ children, href }) => (
+                                      <a href={href} className="text-[#6D5EF8] underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+                                        {children}
+                                      </a>
+                                    ),
+                                    table: ({ children }) => <div className="mb-3 overflow-x-auto"><table className="min-w-full border-collapse border border-[#E5E7EB]">{children}</table></div>,
+                                    th: ({ children }) => <th className="border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-2 text-left font-semibold">{children}</th>,
+                                    td: ({ children }) => <td className="border border-[#E5E7EB] px-3 py-2">{children}</td>,
+                                  }}
+                                >
+                                  {message.content}
+                                </ReactMarkdown>
+
+                                <div className={`mt-3 text-[12px] ${isUser ? 'text-white/70' : 'text-[#9CA3AF]'} ${isWelcome ? 'text-center' : 'text-right'}`}>
+                                  {formatTime(message.timestamp)}
+                                </div>
+                              </div>
+                            </div>
+
+                            {isUser && (
+                              <div className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#6D5EF8] shadow-sm ring-1 ring-[#E5E7EB]">
+                                <User className="h-4.5 w-4.5" />
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+
+                    {isTyping && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex justify-start"
+                      >
+                        <div className="flex items-end gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#6D5EF8] to-[#8B5CF6] text-white shadow-sm">
+                            <Bot className="h-5 w-5" />
+                          </div>
+                          <div className="rounded-[20px] border border-[#E5E7EB] bg-white px-4 py-3 shadow-sm">
+                            <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+                              <span>Zariya is analyzing...</span>
+                              <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 animate-pulse rounded-full bg-[#6D5EF8] [animation-delay:0ms]" />
+                                <span className="h-2 w-2 animate-pulse rounded-full bg-[#6D5EF8] [animation-delay:150ms]" />
+                                <span className="h-2 w-2 animate-pulse rounded-full bg-[#6D5EF8] [animation-delay:300ms]" />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {showQuickReplies && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[96px] z-10 px-4 sm:px-6">
+              <div className="mx-auto max-w-[850px]">
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {quickReplies.map((reply) => (
+                    <motion.button
+                      key={reply}
+                      whileHover={{ y: -2, scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => {
+                        setInput(reply);
+                        setTimeout(() => handleSend(), 10);
+                      }}
+                      className="pointer-events-auto whitespace-nowrap rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#374151] shadow-sm transition-all duration-200 hover:border-[#C4B5FD] hover:text-[#5B4CF4]"
+                    >
+                      {reply}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4 sm:px-6 sm:pb-6">
+            <div className="mx-auto max-w-[850px]">
+              <motion.div
+                initial={{ y: 8, opacity: 0.98 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className="pointer-events-auto rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
+              >
+                <div className="flex items-end gap-3 p-3 sm:p-4">
+                  <button
+                    type="button"
+                    className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-[#FAFAFC] text-[#6B7280] transition-colors hover:bg-white sm:flex"
+                    aria-label="Attach file"
+                  >
+                    <Paperclip className="h-4.5 w-4.5" />
+                  </button>
+
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      if (textareaRef.current) {
+                        textareaRef.current.style.height = 'auto';
+                        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+                      }
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask about careers, colleges, exams, scholarships..."
+                    className="flex-1 resize-none border-0 bg-transparent px-1 py-2 text-[15px] leading-7 text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:ring-0 max-h-48 overflow-hidden"
+                    rows="1"
+                  />
+
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    className={`flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 ${
+                      !input.trim() || isLoading
+                        ? 'cursor-not-allowed bg-[#E5E7EB] text-[#9CA3AF]'
+                        : 'bg-gradient-to-r from-[#6D5EF8] to-[#8B5CF6] text-white shadow-[0_10px_20px_rgba(109,94,248,0.22)] hover:shadow-[0_12px_28px_rgba(109,94,248,0.28)]'
+                    }`}
+                  >
+                    <Send className="h-4.5 w-4.5" />
+                  </button>
+                </div>
+
+                <div className="px-4 pb-3 sm:px-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#6B7280]">
+                    <span>Press Enter to send • Shift + Enter for a new line</span>
+                    <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#F8FAFC] px-3 py-1 text-[#6B7280]">
+                      <Sparkles className="h-3.5 w-3.5 text-[#6D5EF8]" />
+                      Zariya AI Career Counselor
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
