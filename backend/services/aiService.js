@@ -104,6 +104,49 @@ const formatResponse = (response, userName) => {
   return formatted;
 };
 
+const createFallbackChatReply = (userName, userMessage) => {
+  const name = userName || 'there';
+  const message = (userMessage || '').toLowerCase();
+
+  let topicLine = 'I can help you explore careers, courses, colleges, exams, and next steps.';
+
+  if (message.includes('college')) {
+    topicLine = 'I can help you compare colleges, check eligibility, and shortlist good options based on your goals.';
+  } else if (message.includes('course')) {
+    topicLine = 'I can help you choose the right course path based on your interests and career goals.';
+  } else if (message.includes('exam') || message.includes('test')) {
+    topicLine = 'I can help you plan exam preparation, deadlines, and a practical study strategy.';
+  } else if (message.includes('career') || message.includes('job')) {
+    topicLine = 'I can help you narrow down career options and map the skills you need to get there.';
+  }
+
+  return formatResponse(
+    `I’m having trouble reaching the AI service right now, but I’m still here to help. ${topicLine} Please tell me a bit more about what you’re looking for, and I’ll guide you with the best available advice.`,
+    name
+  );
+};
+
+const normalizeQuizLabel = (label) => {
+  const value = String(label || '').trim();
+
+  const labelMap = {
+    Interest_0: 'Technology',
+    Interest_1: 'Arts & Design',
+    Interest_2: 'Science',
+    Interest_3: 'Business',
+    Strength_0: 'Communication',
+    Strength_1: 'Problem Solving',
+    Strength_2: 'Creativity',
+    Strength_3: 'Leadership',
+    Trait_0: 'Introvert',
+    Trait_1: 'Outgoing',
+    Trait_2: 'Analytical',
+    Trait_3: 'Empathetic',
+  };
+
+  return labelMap[value] || value;
+};
+
 // Retry configuration
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 500;
@@ -115,6 +158,97 @@ const isRetryableError = (err) => {
 };
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const isAuthLikeAIFailure = (error) => {
+  const errMsg = (error?.message || '').toString().toLowerCase();
+  const status = error?.status || error?.code;
+
+  return (
+    status === 400 ||
+    status === 401 ||
+    status === 403 ||
+    errMsg.includes('api key not valid') ||
+    errMsg.includes('api_key_invalid') ||
+    errMsg.includes('invalid api key') ||
+    errMsg.includes('permission denied') ||
+    errMsg.includes('unauthorized')
+  );
+};
+
+const extractChatTextFromMessages = (messages = []) => {
+  return messages
+    .map((msg) => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: Array.isArray(msg.parts) ? (msg.parts[0]?.text || '') : (msg.content || ''),
+    }))
+    .filter((msg) => msg.content && msg.content.trim().length > 0);
+};
+
+const sendChatWithGroq = async ({ personalizedContext, formattedHistory, userMessage }) => {
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (!groqApiKey) return null;
+
+  const groqModel = process.env.GROQ_CHAT_MODEL || process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  const historyMessages = extractChatTextFromMessages(formattedHistory.slice(0, -1));
+
+  const response = await retryWithBackoff(async () => {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: groqModel,
+        temperature: 0.7,
+        max_tokens: 600,
+        messages: [
+          { role: 'system', content: personalizedContext },
+          ...historyMessages,
+          { role: 'user', content: userMessage },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      const error = new Error(`Groq chat API error: ${res.status}`);
+      error.status = res.status;
+      error.raw = text;
+      throw error;
+    }
+
+    return res.json();
+  });
+
+  return response?.choices?.[0]?.message?.content || '';
+};
+
+const sendChatWithGemini = async ({ personalizedContext, formattedHistory, userMessage }) => {
+  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!geminiApiKey) return null;
+
+  const localGenAI = new GoogleGenerativeAI(geminiApiKey);
+  const localModel = localGenAI.getGenerativeModel({
+    model: 'gemini-1.5-flash',
+    generationConfig: {
+      maxOutputTokens: 600,
+      temperature: 0.7,
+      topK: 30,
+      topP: 0.8,
+    }
+  });
+
+  const chatSession = localModel.startChat({
+    history: [
+      { role: 'model', parts: [{ text: personalizedContext }] },
+      ...formattedHistory.slice(0, -1),
+    ],
+  });
+
+  const response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
+  return response?.response?.text?.() || '';
+};
 
 const QUIZAPI_KEY = process.env.QUIZAPI_KEY || 'qa_sk_5949c78c47e3c36f02459e213695aaaf1136c3a3';
 const QUIZAPI_BASE = 'https://quizapi.io/api/v1';
@@ -335,6 +469,15 @@ exports.processMessage = async (user, userMessage) => {
   try {
     const userId = user._id;
     const userName = user.firstName;
+    const latestQuizResult = Array.isArray(user.quizResults) && user.quizResults.length > 0
+      ? user.quizResults[user.quizResults.length - 1]
+      : null;
+    const normalizedQuizResult = latestQuizResult ? {
+      ...latestQuizResult,
+      interests: Array.isArray(latestQuizResult.interests) ? latestQuizResult.interests.map(normalizeQuizLabel) : [],
+      strengths: Array.isArray(latestQuizResult.strengths) ? latestQuizResult.strengths.map(normalizeQuizLabel) : [],
+      suggestedStreams: Array.isArray(latestQuizResult.suggestedStreams) ? latestQuizResult.suggestedStreams.map(normalizeQuizLabel) : [],
+    } : null;
 
     // Get chat history
     const chat = await getChatHistory(userId);
@@ -352,11 +495,11 @@ ${SYSTEM_CONTEXT}
 
 You are helping ${userName}.
 
-${user.quizResults && user.quizResults.length > 0 ? `
+${normalizedQuizResult ? `
 **${userName}'s Quiz Results:**
-- Latest score: ${user.quizResults[user.quizResults.length - 1].score || 'N/A'}
-- Suggested careers: ${user.quizResults[user.quizResults.length - 1].suggestedStreams?.join(', ') || 'Various options'}
-- Key interests: ${user.quizResults[user.quizResults.length - 1].interests?.join(', ') || 'Exploring'}
+- Latest score: ${normalizedQuizResult.score || 'N/A'}
+- Suggested careers: ${normalizedQuizResult.suggestedStreams?.join(', ') || 'Various options'}
+- Key interests: ${normalizedQuizResult.interests?.join(', ') || 'Exploring'}
 
 Use this to give personalized advice.` : ''}
 
@@ -367,23 +510,47 @@ Always address ${userName} by name and keep responses focused and actionable.
     const formattedHistory = formatChatHistory(chat.messages);
 
     // Get AI response
-    let response;
-    if (chat.messages.length <= 1) {
-      const chatSession = model.startChat({
-        history: [{ role: 'model', parts: [{ text: personalizedContext }] }],
+    let botResponse = '';
+    let lastError = null;
+
+    try {
+      botResponse = await sendChatWithGroq({
+        personalizedContext,
+        formattedHistory,
+        userMessage,
       });
-      response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
-    } else {
-      const chatSession = model.startChat({
-        history: [
-          { role: 'model', parts: [{ text: personalizedContext }] },
-          ...formattedHistory.slice(0, -1)
-        ],
-      });
-      response = await retryWithBackoff(() => chatSession.sendMessage(userMessage));
+    } catch (error) {
+      lastError = error;
+
+      if (!isAuthLikeAIFailure(error)) {
+        console.warn('Groq chat failed, trying Gemini fallback:', error?.message || error);
+      }
     }
 
-    const botResponse = response.response.text();
+    if (!botResponse) {
+      try {
+        botResponse = await sendChatWithGemini({
+          personalizedContext,
+          formattedHistory,
+          userMessage,
+        });
+      } catch (error) {
+        lastError = error;
+
+        if (!isAuthLikeAIFailure(error)) {
+          console.warn('Gemini chat failed, using local fallback:', error?.message || error);
+        }
+      }
+    }
+
+    if (!botResponse) {
+      if (lastError && isAuthLikeAIFailure(lastError)) {
+        botResponse = createFallbackChatReply(userName, userMessage);
+      } else {
+        throw lastError || new Error('AI chat response unavailable');
+      }
+    }
+
     const formattedResponse = formatResponse(botResponse, userName);
 
     // Add bot response to history
@@ -402,7 +569,18 @@ Always address ${userName} by name and keep responses focused and actionable.
     console.error('AI processing error:', error);
 
     const errMsg = (error?.message || '').toString().toLowerCase();
-    
+
+    if (
+      errMsg.includes('api key not valid') ||
+      errMsg.includes('api_key_invalid') ||
+      errMsg.includes('invalid api key') ||
+      errMsg.includes('permission denied') ||
+      errMsg.includes('unauthorized') ||
+      error?.code === 400
+    ) {
+      return createFallbackChatReply(user?.firstName, userMessage);
+    }
+
     if (errMsg.includes('quota') || error?.code === 429) {
       const quotaError = new Error('Daily AI usage limit reached. Please try again tomorrow.');
       quotaError.status = 429;

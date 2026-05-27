@@ -46,6 +46,17 @@ exports.submitQuiz = async (req, res) => {
     const strengths = [];
     const personalityTraits = [];
     const detailedAnswers = [];
+    const interestLabels = ['Technology', 'Arts & Design', 'Science', 'Business'];
+    const strengthLabels = ['Communication', 'Problem Solving', 'Creativity', 'Leadership'];
+    const personalityLabels = ['Introvert', 'Outgoing', 'Analytical', 'Empathetic'];
+
+    const getLabelByIndex = (labels, answerIndex, fallbackPrefix) => {
+      if (Number.isInteger(answerIndex) && answerIndex >= 0 && answerIndex < labels.length) {
+        return labels[answerIndex];
+      }
+
+      return `${fallbackPrefix}_${answerIndex}`;
+    };
     
     // If we have a quizId and it's not 'personalized-quiz', try to get the quiz
     let quiz = null;
@@ -85,12 +96,12 @@ exports.submitQuiz = async (req, res) => {
         let category = 'personality';
         if (questionIndex >= 0 && questionIndex <= 2) {
           category = 'interest';
-          interests.push(`Interest_${answerIndex}`);
+          interests.push(getLabelByIndex(interestLabels, answerIndex, 'Interest'));
         } else if (questionIndex >= 3 && questionIndex <= 5) {
           category = 'strength';
-          strengths.push(`Strength_${answerIndex}`);
+          strengths.push(getLabelByIndex(strengthLabels, answerIndex, 'Strength'));
         } else if (questionIndex >= 6 && questionIndex <= 9) {
-          personalityTraits.push(`Trait_${answerIndex}`);
+          personalityTraits.push(getLabelByIndex(personalityLabels, answerIndex, 'Trait'));
         }
         
         // Store detailed answer for personalized quiz
@@ -98,7 +109,11 @@ exports.submitQuiz = async (req, res) => {
           questionIndex: questionIndex,
           question: `Question ${questionIndex + 1}`,
           selectedAnswer: answerIndex,
-          answerText: `Option ${answerIndex + 1}`,
+          answerText: category === 'interest'
+            ? getLabelByIndex(interestLabels, answerIndex, 'Interest')
+            : category === 'strength'
+            ? getLabelByIndex(strengthLabels, answerIndex, 'Strength')
+            : getLabelByIndex(personalityLabels, answerIndex, 'Trait'),
           category: category
         });
         
