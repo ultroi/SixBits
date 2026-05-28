@@ -1,54 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Plus, Trash2, Sparkles, MessageSquare, Paperclip, User, Bot, ArrowRight } from 'lucide-react';
+import { Send, Plus, Trash2, Sparkles, MessageSquare, Paperclip, User, Bot, Square } from 'lucide-react';
 import { chatService } from '../services/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 const ChatInterface = () => {
-  const { user } = useAuth();
   const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isApiOnline, setIsApiOnline] = useState(true);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const abortControllerRef = useRef(null);
   const navigate = useNavigate();
-
-  // user profile
-  const userProfile = {
-    age: user?.age,
-    gender: user?.gender,
-    class: user?.class,
-    academicInterests: user?.academicInterests,
-    quizResults: JSON.parse(localStorage.getItem('quizResults') || 'null')
-  };
-
-  const quickReplies = userProfile.quizResults
-    ? [
-        "Show me courses based on my quiz results",
-        "What colleges should I consider?",
-        "Help me create a study plan"
-      ]
-    : [
-        "Take me to the aptitude quiz",
-        "Help me choose my stream",
-        "Show me nearby colleges"
-      ];
-
-  const [showQuickReplies, setShowQuickReplies] = useState(true);
-
-  const emptySuggestions = [
-    'Recommend career paths',
-    'Compare colleges',
-    'Build study roadmap',
-    'Find entrance exams',
-  ];
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId);
 
@@ -122,10 +92,13 @@ const ChatInterface = () => {
     setInput('');
     setIsLoading(true);
     setIsTyping(true);
-    setShowQuickReplies(false);
+
+    // Create a new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
     try {
-      const response = await chatService.sendMessage(input);
+      const response = await chatService.sendMessage(input || userMessage.content, abortControllerRef.current.signal);
+      setIsApiOnline(true);
 
       const botMessage = {
         id: messages.length + 2,
@@ -137,7 +110,14 @@ const ChatInterface = () => {
 
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
+      // Don't show error if request was aborted
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled by user');
+        return;
+      }
+
       console.error('Chat error:', error);
+      setIsApiOnline(false);
 
       const errorMessage = {
         id: messages.length + 2,
@@ -151,6 +131,16 @@ const ChatInterface = () => {
     } finally {
       setIsLoading(false);
       setIsTyping(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsLoading(false);
+      setIsTyping(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -173,7 +163,6 @@ const ChatInterface = () => {
     setThreads(prev => [newThread, ...prev]);
     setActiveThreadId(newThread.id);
     setMessages(newThread.messages);
-    setShowQuickReplies(true);
   };
 
   const deleteThread = (threadId) => {
@@ -187,6 +176,7 @@ const ChatInterface = () => {
       const newActiveThread = updatedThreads[0];
       setActiveThreadId(newActiveThread.id);
       setMessages(newActiveThread.messages);
+
     }
     toast.success('Conversation deleted');
   };
@@ -305,9 +295,15 @@ const ChatInterface = () => {
                 <span className="h-2.5 w-2.5 rounded-full bg-[#6D5EF8]" />
                 Zariya AI
               </div>
-              <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 sm:flex">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Online
+              <div
+                className={`hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-medium sm:flex ${
+                  isApiOnline
+                    ? 'border border-emerald-100 bg-emerald-50 text-emerald-700'
+                    : 'border border-rose-100 bg-rose-50 text-rose-700'
+                }`}
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${isApiOnline ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                {isApiOnline ? 'Online' : 'Offline'}
               </div>
             </div>
           </div>
@@ -334,26 +330,7 @@ const ChatInterface = () => {
                       Get personalized career guidance, college recommendations, and study planning support.
                     </p>
 
-                    <div className="mt-8 grid w-full max-w-3xl gap-3 sm:grid-cols-2">
-                      {emptySuggestions.map((item) => (
-                        <motion.button
-                          key={item}
-                          whileHover={{ y: -3, scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          transition={{ duration: 0.2 }}
-                          onClick={() => {
-                            setInput(item);
-                            setTimeout(() => handleSend(), 10);
-                          }}
-                          className="rounded-3xl border border-[#E5E7EB] bg-white p-4 text-left text-sm font-medium text-[#111827] shadow-sm transition-all duration-200 hover:border-[#C4B5FD] hover:shadow-md"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <span>{item}</span>
-                            <ArrowRight className="h-4 w-4 text-[#6D5EF8]" />
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
+
                   </motion.div>
                 ) : (
                   <div className="space-y-4 py-2">
@@ -473,31 +450,9 @@ const ChatInterface = () => {
             </div>
           </div>
 
-          {showQuickReplies && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-[96px] z-10 px-4 sm:px-6">
-              <div className="mx-auto max-w-[850px]">
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {quickReplies.map((reply) => (
-                    <motion.button
-                      key={reply}
-                      whileHover={{ y: -2, scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.2 }}
-                      onClick={() => {
-                        setInput(reply);
-                        setTimeout(() => handleSend(), 10);
-                      }}
-                      className="pointer-events-auto whitespace-nowrap rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#374151] shadow-sm transition-all duration-200 hover:border-[#C4B5FD] hover:text-[#5B4CF4]"
-                    >
-                      {reply}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4 sm:px-6 sm:pb-6">
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-2 sm:px-6 sm:pb-3">
             <div className="mx-auto max-w-[850px]">
               <motion.div
                 initial={{ y: 8, opacity: 0.98 }}
@@ -505,7 +460,7 @@ const ChatInterface = () => {
                 transition={{ duration: 0.2 }}
                 className="pointer-events-auto rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
               >
-                <div className="flex items-end gap-3 p-3 sm:p-4">
+                <div className="flex items-end gap-2 p-2 sm:p-3">
                   <button
                     type="button"
                     className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-[#FAFAFC] text-[#6B7280] transition-colors hover:bg-white sm:flex"
@@ -526,24 +481,28 @@ const ChatInterface = () => {
                     }}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask about careers, colleges, exams, scholarships..."
-                    className="flex-1 resize-none border-0 bg-transparent px-1 py-2 text-[15px] leading-7 text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:ring-0 max-h-48 overflow-hidden"
+                    className="flex-1 resize-none border-0 bg-transparent px-1 py-1 text-[15px] leading-6 text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:ring-0 max-h-48 overflow-hidden"
                     rows="1"
                   />
 
                   <button
-                    onClick={handleSend}
-                    disabled={!input.trim() || isLoading}
+                    onClick={isLoading ? handleStop : handleSend}
+                    disabled={!input.trim() && !isLoading}
                     className={`flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 ${
-                      !input.trim() || isLoading
+                      (!input.trim() && !isLoading)
                         ? 'cursor-not-allowed bg-[#E5E7EB] text-[#9CA3AF]'
                         : 'bg-gradient-to-r from-[#6D5EF8] to-[#8B5CF6] text-white shadow-[0_10px_20px_rgba(109,94,248,0.22)] hover:shadow-[0_12px_28px_rgba(109,94,248,0.28)]'
                     }`}
                   >
-                    <Send className="h-4.5 w-4.5" />
+                    {isLoading ? (
+                      <Square className="h-4.5 w-4.5 fill-current" />
+                    ) : (
+                      <Send className="h-4.5 w-4.5" />
+                    )}
                   </button>
                 </div>
 
-                <div className="px-4 pb-3 sm:px-5">
+                <div className="px-3 pb-2 sm:px-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#6B7280]">
                     <span>Press Enter to send • Shift + Enter for a new line</span>
                     <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#F8FAFC] px-3 py-1 text-[#6B7280]">

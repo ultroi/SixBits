@@ -330,7 +330,7 @@ async function seedDatabase() {
 
     console.log('Connected to MongoDB');
 
-    // Clear existing data
+    // Clear existing data 
     await Quiz.deleteMany({});
     await Course.deleteMany({});
     await College.deleteMany({});

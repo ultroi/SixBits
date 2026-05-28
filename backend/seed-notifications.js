@@ -80,7 +80,7 @@ async function seedNotifications() {
         const notification = new Notification({
           userId: user._id,
           ...notificationData,
-          read: Math.random() > 0.5, // Randomly mark some as read
+          read: Math.random() > 0.5,
         });
 
         await notification.save();

@@ -105,8 +105,8 @@ export const authService = {
 // Chat services
 export const chatService = {
   // Send message to AI
-  sendMessage: async (message) => {
-    const response = await api.post('/chat', { message });
+  sendMessage: async (message, signal) => {
+    const response = await api.post('/chat', { message }, { signal });
     return response.data;
   },
 

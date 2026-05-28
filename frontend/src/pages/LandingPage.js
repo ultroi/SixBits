@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 import { GraduationCap, TrendingUp, Lightbulb, Bot, Sparkles, ArrowRight, Menu, X, Moon, Sun, Star, Users, Award, Zap } from 'lucide-react';
 
 const LandingPage = () => {
@@ -13,6 +14,16 @@ const LandingPage = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
+
+  const floatingParticles = useMemo(() => (
+    [...Array(20)].map((_, index) => ({
+      id: index,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${2 + Math.random() * 3}s`,
+    }))
+  ), []);
 
   const handleSendMessage = () => {
     if (inputValue.trim()) {
@@ -55,9 +66,10 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-[#050816] text-white relative overflow-hidden dark">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.08),transparent_35%)] pointer-events-none"></div>
       {/* Navigation */}
-      <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50">
+      <nav className="bg-white/5 dark:bg-black/20 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)] sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
@@ -133,8 +145,26 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-indigo-50/30"></div>
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 blur-[140px] rounded-full"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 blur-[140px] rounded-full"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_55%)]"></div>
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          {floatingParticles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute w-1 h-1 bg-indigo-400 rounded-full animate-pulse"
+              style={{
+                top: particle.top,
+                left: particle.left,
+                animationDelay: particle.delay,
+                animationDuration: particle.duration,
+              }}
+            />
+          ))}
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-10 md:pt-12 md:pb-12 relative">
           <div className="md:flex md:items-center md:justify-between">
             <div className="md:w-1/2 md:pr-8">
               <div className="flex items-center space-x-2 mb-6">
@@ -142,27 +172,30 @@ const LandingPage = () => {
                 <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">AI-Powered Career Guidance</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
-                Find Your <span className="text-indigo-600">Career Path</span> with Zariya
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white leading-[1.12] md:leading-[1.08] tracking-tight">
+                Shape Your Future With
+                <span className="block pb-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                  AI-Powered Career Intelligence
+                </span>
               </h1>
               
-              <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p className="mt-5 text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
                 Your AI career counselor that understands your goals, strengths, and aspirations to guide you towards your ideal career journey.
               </p>
               
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
                 {isAuthenticated ? (
-                  <Link to="/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+                  <Link to="/dashboard" className="bg-indigo-600 text-white px-7 py-3.5 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
                     <span>Go to Dashboard</span>
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 ) : (
-                  <Link to="/signup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 group">
+                  <Link to="/signup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 group">
                     <span>Get Started Free</span>
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 )}
-                <button onClick={() => scrollToId('features')} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center space-x-2">
+                <button onClick={() => scrollToId('features')} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white px-7 py-3.5 rounded-xl font-medium text-sm md:text-base transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center space-x-2">
                   <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <span>Explore Features</span>
                 </button>
@@ -171,18 +204,19 @@ const LandingPage = () => {
               {/* Stats */}
               <div className="mt-8 grid grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">1+</div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">1+</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">50+</div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">50+</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Career Paths</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">24/7</div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">24/7</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">AI Support</div>
                 </div>
               </div>
+
             </div>
             
             <div className="mt-16 md:mt-0 md:w-1/2 md:flex md:justify-end">
@@ -190,7 +224,7 @@ const LandingPage = () => {
                 {/* Background decoration */}
                 <div className="absolute -inset-4 bg-indigo-600 rounded-3xl blur-lg opacity-8"></div>
                 
-                <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+                <div className="relative bg-white/5 backdrop-blur-2xl shadow-[0_0_80px_rgba(99,102,241,0.25)] rounded-3xl overflow-hidden border border-white/10 before:content-[''] before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-indigo-500 before:to-purple-500 before:rounded-3xl">
                   <div className="p-6 md:p-8">
                     <div className="absolute top-0 right-0 h-24 w-24 bg-indigo-50 rounded-bl-full"></div>
                     
@@ -241,16 +275,22 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
-        
       </div>
 
       {/* Features */}
       {/* About */}
-      <div id="about" className="bg-gray-50 dark:bg-gray-900 py-20">
+      <motion.div
+        id="about"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true, amount: 0.25 }}
+        className="bg-transparent py-32 relative"
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">About Zariya</h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">About Zariya</h2>
+            <p className="mt-4 text-base md:text-lg text-gray-600 dark:text-gray-300">
               Zariya is an AI-powered career guidance platform built to help students and professionals
               discover meaningful career paths, learn the skills they need, and make data-driven decisions
               about education and job opportunities.
@@ -259,95 +299,110 @@ const LandingPage = () => {
 
           <div className="grid gap-8 md:grid-cols-3">
             <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">Our Mission</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">Empower people with personalized, accessible career guidance so they can make confident decisions about their future.</p>
+              <h3 className="font-semibold text-base md:text-lg text-gray-900 dark:text-white mb-2">Our Mission</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Empower people with personalized, accessible career guidance so they can make confident decisions about their future.</p>
             </div>
             <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">How it Works</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">Leverages conversational AI, market insights, and curated learning pathways to generate recommendations tailored to each user's goals and background.</p>
+              <h3 className="font-semibold text-base md:text-lg text-gray-900 dark:text-white mb-2">How it Works</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Leverages conversational AI, market insights, and curated learning pathways to generate recommendations tailored to each user's goals and background.</p>
             </div>
             <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">Privacy</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">We prioritize user privacy and only use data to improve guidance; personal data is protected and never shared without consent.</p>
+              <h3 className="font-semibold text-base md:text-lg text-gray-900 dark:text-white mb-2">Privacy</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm">We prioritize user privacy and only use data to improve guidance; personal data is protected and never shared without consent.</p>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div id="features" className="bg-white dark:bg-gray-800 py-20">
+      <motion.div
+        id="features"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true, amount: 0.2 }}
+        className="bg-transparent py-32 relative"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-4">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-4">
               How Zariya Works For You
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Our AI-powered career counseling platform adapts to your unique needs
             </p>
           </div>
 
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <div className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-600">
+            <div className="group bg-white/5 backdrop-blur-2xl p-8 rounded-2xl shadow-lg hover:scale-105 hover:border-indigo-400/40 hover:shadow-[0_0_40px_rgba(99,102,241,0.25)] transition-all duration-500 transform hover:-translate-y-2 border border-white/10 dark:border-white/10">
               <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform">
                 <Lightbulb className="text-white text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Personalized Advice</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Personalized Advice</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
                 Get tailored career guidance based on your skills, interests, and goals.
               </p>
             </div>
             
-            <div className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-600">
+            <div className="group bg-white/5 backdrop-blur-2xl p-8 rounded-2xl shadow-lg hover:scale-105 hover:border-indigo-400/40 hover:shadow-[0_0_40px_rgba(99,102,241,0.25)] transition-all duration-500 transform hover:-translate-y-2 border border-white/10 dark:border-white/10">
               <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform">
                 <GraduationCap className="text-white text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Learning Pathways</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Learning Pathways</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
                 Discover the right education and training paths to reach your career goals.
               </p>
             </div>
             
-            <div className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-600">
+            <div className="group bg-white/5 backdrop-blur-2xl p-8 rounded-2xl shadow-lg hover:scale-105 hover:border-indigo-400/40 hover:shadow-[0_0_40px_rgba(99,102,241,0.25)] transition-all duration-500 transform hover:-translate-y-2 border border-white/10 dark:border-white/10">
               <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform">
                 <TrendingUp className="text-white text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Market Insights</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Market Insights</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
                 Get up-to-date information on job market trends and in-demand skills.
               </p>
             </div>
             
-            <div className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-600">
+            <div className="group bg-white/5 backdrop-blur-2xl p-8 rounded-2xl shadow-lg hover:scale-105 hover:border-indigo-400/40 hover:shadow-[0_0_40px_rgba(99,102,241,0.25)] transition-all duration-500 transform hover:-translate-y-2 border border-white/10 dark:border-white/10">
               <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform">
                 <Bot className="text-white text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">AI Memory</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">AI Memory</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
                 Our AI remembers your conversations to provide consistent guidance over time.
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* CTA Section */}
-      <div className="bg-indigo-600 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true, amount: 0.2 }}
+        className="bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 py-32 relative overflow-hidden"
+      >
+        <div className="absolute -top-20 -left-20 w-72 h-72 bg-white/10 blur-[120px] rounded-full"></div>
+        <div className="absolute -bottom-24 -right-16 w-80 h-80 bg-cyan-300/10 blur-[140px] rounded-full"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center relative">
             <div className="flex items-center justify-center mb-6">
               <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
                 <Star className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white sm:text-4xl mb-4">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-white sm:text-4xl mb-4">
               Ready to Plan Your Career Journey?
             </h2>
-            <p className="text-xl text-indigo-100 max-w-2xl mx-auto mb-8 leading-relaxed">
+            <p className="text-base md:text-lg text-indigo-100 max-w-2xl mx-auto mb-8 leading-relaxed">
               Join Zariya today and get personalized guidance from our AI career counselor.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link 
                 to="/signup" 
-                className="bg-white text-indigo-600 hover:bg-gray-100 font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                className="bg-white text-indigo-600 hover:bg-gray-100 font-bold py-3.5 px-7 rounded-xl text-sm md:text-base transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
               >
                 <Sparkles className="w-5 h-5" />
                 <span>Get Started Free</span>
@@ -365,7 +420,7 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Footer */}
       <footer className="bg-gray-900 dark:bg-gray-950 text-white py-16">
