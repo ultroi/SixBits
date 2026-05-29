@@ -216,7 +216,7 @@ const ChatInterface = () => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex-1 overflow-y-auto px-4 pb-4 hide-scrollbar">
           <div className="space-y-5">
             {Object.entries(groupedThreads).map(([label, groupThreads]) =>
               groupThreads.length > 0 ? (
@@ -311,7 +311,7 @@ const ChatInterface = () => {
 
         <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="mx-auto flex w-full max-w-[850px] min-h-0 flex-1 flex-col px-4 pb-[150px] pt-6 sm:px-6 lg:px-0">
-            <div className="flex-1 overflow-y-auto chat-scroll">
+            <div className="flex-1 overflow-y-auto chat-scroll hide-scrollbar">
               <AnimatePresence mode="popLayout">
                 {messages.length === 1 && messages[0]?.id === 1 && !messages.some((message) => message.sender === 'user') ? (
                   <motion.div

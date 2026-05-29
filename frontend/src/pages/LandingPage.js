@@ -66,7 +66,7 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#050816] text-white relative overflow-hidden dark">
+    <div className="min-h-screen bg-[#050816] text-white relative overflow-visible dark">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.08),transparent_35%)] pointer-events-none"></div>
       {/* Navigation */}
       <nav className="bg-white/5 dark:bg-black/20 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)] sticky top-0 z-50 relative">
@@ -144,7 +144,142 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden py-6 md:py-12 min-h-[calc(100vh-4rem)]">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-600/20 blur-[140px] rounded-full"></div>
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-600/20 blur-[140px] rounded-full"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-10 relative">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            
+            {/* Left Content */}
+            <div className="space-y-8">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-emerald-400">AI-Powered Career Guidance</span>
+              </div>
+
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-[1.08] tracking-tighter">
+                Shape Your Future With
+                <span className="block bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                  AI-Powered Career Intelligence
+                </span>
+              </h1>
+
+              <p className="text-base md:text-lg text-gray-300 max-w-lg">
+                Your personal AI career counselor that understands your goals, strengths, and aspirations.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                {isAuthenticated ? (
+                  <Link to="/dashboard" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 text-base shadow-xl shadow-indigo-500/30 transition-all hover:scale-105">
+                    Go to Dashboard <ArrowRight className="w-5 h-5" />
+                  </Link>
+                ) : (
+                  <Link to="/signup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 text-base shadow-xl shadow-indigo-500/30 transition-all hover:scale-105">
+                    Get Started Free <ArrowRight className="w-5 h-5" />
+                  </Link>
+                )}
+
+                <button 
+                  onClick={() => scrollToId('features')}
+                  className="border border-white/30 hover:border-white/50 bg-white/5 backdrop-blur-xl px-8 py-4 rounded-2xl font-medium flex items-center justify-center gap-3 transition-all hover:bg-white/10"
+                >
+                  <Zap className="w-5 h-5" /> Explore Features
+                </button>
+              </div>
+
+              {/* Stats */}
+              <div className="flex gap-8 pt-4">
+                <div>
+                  <div className="text-3xl font-bold">1K+</div>
+                  <div className="text-sm text-gray-400">Active Users</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold">50+</div>
+                  <div className="text-sm text-gray-400">Career Paths</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold">24/7</div>
+                  <div className="text-sm text-gray-400">AI Support</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side - Enhanced Chat Interface */}
+            <div className="relative flex justify-center items-center">
+              <div className="absolute -inset-6 md:-inset-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 blur-3xl rounded-3xl pointer-events-none"></div>
+
+              <div className="relative w-full md:w-[95%] lg:w-[640px] xl:w-[450px] h-[490px] flex flex-col bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-3xl overflow-hidden shadow-2xl shadow-indigo-500/20">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Zariya AI</p>
+                    <p className="text-xs text-emerald-300 flex items-center gap-1.5">
+                      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                      Always Online
+                    </p>
+                  </div>
+                </div>
+
+                {/* Chat Messages */}
+                <div 
+                  className="flex-1 overflow-y-auto p-6 space-y-6 bg-transparent hide-scrollbar"
+                  style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                  }}
+                >
+                  {messages.map((msg, index) => (
+                    <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${
+                        msg.isUser 
+                          ? 'bg-indigo-600 text-white rounded-br-none' 
+                          : 'bg-gray-800 text-gray-200 rounded-bl-none'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input Area */}
+                <div className="p-5 border-t border-white/10 bg-transparent">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      className="w-full bg-gray-900 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="Ask anything about your career..."
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                    />
+                    <button 
+                      onClick={handleSendMessage}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-500 p-3 rounded-xl transition-colors"
+                    >
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <motion.div
+        id="about"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true, amount: 0.25 }}
+        className="bg-transparent py-32 relative overflow-hidden"
+      > 
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 blur-[140px] rounded-full"></div>
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 blur-[140px] rounded-full"></div>
@@ -164,129 +299,6 @@ const LandingPage = () => {
             />
           ))}
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-10 md:pt-12 md:pb-12 relative">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="md:w-1/2 md:pr-8">
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">AI-Powered Career Guidance</span>
-              </div>
-              
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white leading-[1.12] md:leading-[1.08] tracking-tight">
-                Shape Your Future With
-                <span className="block pb-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  AI-Powered Career Intelligence
-                </span>
-              </h1>
-              
-              <p className="mt-5 text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                Your AI career counselor that understands your goals, strengths, and aspirations to guide you towards your ideal career journey.
-              </p>
-              
-              <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                {isAuthenticated ? (
-                  <Link to="/dashboard" className="bg-indigo-600 text-white px-7 py-3.5 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
-                    <span>Go to Dashboard</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                ) : (
-                  <Link to="/signup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 group">
-                    <span>Get Started Free</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                )}
-                <button onClick={() => scrollToId('features')} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white px-7 py-3.5 rounded-xl font-medium text-sm md:text-base transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center space-x-2">
-                  <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <span>Explore Features</span>
-                </button>
-              </div>
-              
-              {/* Stats */}
-              <div className="mt-8 grid grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">1+</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">50+</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Career Paths</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">24/7</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">AI Support</div>
-                </div>
-              </div>
-
-            </div>
-            
-            <div className="mt-16 md:mt-0 md:w-1/2 md:flex md:justify-end">
-              <div className="relative max-w-lg mx-auto md:mx-0">
-                {/* Background decoration */}
-                <div className="absolute -inset-4 bg-indigo-600 rounded-3xl blur-lg opacity-8"></div>
-                
-                <div className="relative bg-white/5 backdrop-blur-2xl shadow-[0_0_80px_rgba(99,102,241,0.25)] rounded-3xl overflow-hidden border border-white/10 before:content-[''] before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-indigo-500 before:to-purple-500 before:rounded-3xl">
-                  <div className="p-6 md:p-8">
-                    <div className="absolute top-0 right-0 h-24 w-24 bg-indigo-50 rounded-bl-full"></div>
-                    
-                    <div className="flex items-center mb-6">
-                      <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center shadow-md">
-                        <Bot className="text-white text-xl" />
-                      </div>
-                      <div className="ml-4">
-                        <h3 className="font-bold text-gray-900 dark:text-white text-lg">Zariya AI Assistant</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                          Online now
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4 max-h-64 overflow-y-auto">
-                      {messages.map((msg, index) => (
-                        <div key={index} className={`rounded-2xl px-4 py-3 max-w-sm shadow-sm ${
-                          msg.isUser 
-                            ? 'bg-indigo-600 text-white ml-auto' 
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                        }`}>
-                          <p className="text-sm leading-relaxed">{msg.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-6 relative">
-                      <input 
-                        type="text" 
-                        className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-colors" 
-                        placeholder="Type your query here..." 
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                      />
-                      <button 
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
-                        onClick={handleSendMessage}
-                      >
-                        <ArrowRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features */}
-      {/* About */}
-      <motion.div
-        id="about"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        viewport={{ once: true, amount: 0.25 }}
-        className="bg-transparent py-32 relative"
-      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">About Zariya</h2>
@@ -320,8 +332,27 @@ const LandingPage = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true, amount: 0.2 }}
-        className="bg-transparent py-32 relative"
+        className="bg-transparent py-32 relative overflow-hidden"
       >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 blur-[140px] rounded-full"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 blur-[140px] rounded-full"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_55%)]"></div>
+        </div>
+        <div className="absolute inset-0 pointer-events-none">
+          {floatingParticles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute w-1 h-1 bg-indigo-400 rounded-full animate-pulse"
+              style={{
+                top: particle.top,
+                left: particle.left,
+                animationDelay: particle.delay,
+                animationDuration: particle.duration,
+              }}
+            />
+          ))}
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-4">

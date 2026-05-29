@@ -128,7 +128,7 @@ const SidebarNav = ({ isOpen, onClose, profileCompletion = 5 }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto hide-scrollbar">
           {menuItems.map((item, idx) => (
             <Link
               key={idx}

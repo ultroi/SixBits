@@ -825,7 +825,7 @@ const Settings = () => {
                         <input
                           type="email"
                           name="newEmail"
-                          value={emailForm.newEmail || user?.email || ''}
+                          value={emailForm.newEmail}
                           onChange={(e) => setEmailForm(prev => ({ ...prev, newEmail: e.target.value }))}
                           placeholder="Enter new email address"
                           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white hover:border-indigo-300 focus:border-indigo-500 focus:bg-indigo-50/30 outline-none transition-colors"

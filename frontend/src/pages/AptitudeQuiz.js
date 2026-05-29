@@ -662,31 +662,38 @@ const AptitudeQuiz = () => {
 
         <div className="py-8">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 transform hover:scale-[1.02] transition-transform duration-300">
-              <div className="text-center mb-8">
-                <div className="animate-bounce">
-                  <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+            <div className="bg-white rounded-3xl shadow-2xl p-8 transform hover:scale-[1.01] transition-transform duration-300 border-2 border-indigo-100 mb-8">
+              <div className="text-center mb-10">
+                <div className="flex justify-center mb-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 rounded-full blur-lg opacity-60 animate-pulse"></div>
+                    <div className="relative animate-bounce">
+                      <CheckCircle className="w-24 h-24 text-green-500" />
+                    </div>
+                  </div>
                 </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
-                  Quiz Complete!
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-3">
+                  🎉 Quiz Complete!
                 </h1>
-                <p className="text-gray-600 text-lg">Here are your aptitude assessment results</p>
+                <p className="text-xl text-gray-600">Your aptitude assessment results are ready</p>
+                <p className="text-sm text-gray-500 mt-2">📊 Scroll down to see your detailed analysis</p>
               </div>
 
               {/* Interactive Results Summary: animated rings + detail panel */}
-              {/* Helper: Animated ring component and interactive detail drawer */}
-              {
-                /* Inline subcomponents: AnimatedRing and CategoryDetail */
-              }
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Your Performance Overview</h3>
+              <div className="mb-10">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Star className="w-6 h-6 text-yellow-500" />
+                    Your Performance Overview
+                  </h3>
                   <div className="flex items-center space-x-2">
-                    <button onClick={handleRetake} className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700">Retake</button>
+                    <button onClick={handleRetake} className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-sm font-bold hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                      🔄 Retake Quiz
+                    </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* AnimatedRing component instances */}
                   {/** AnimatedRing component defined inline below **/}
                   <AnimatedRing
@@ -846,30 +853,35 @@ const AptitudeQuiz = () => {
 
               {/* Course Suggestions */}
               {courseSuggestions && (
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6 hover:shadow-lg transition-all duration-300">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <BookOpen className="w-6 h-6 text-green-500 mr-2 animate-pulse" />
-                    AI Course Recommendations
+                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-3xl p-8 mb-6 border-2 border-indigo-200 hover:shadow-2xl transition-all duration-300">
+                  <h3 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <BookOpen className="w-8 h-8 text-indigo-600 animate-pulse" />
+                    🎓 AI-Powered Course Recommendations
                   </h3>
                   
                   {/* Top 3 Courses */}
-                  <div className="mb-6">
-                    <h4 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
-                      <Trophy className="w-5 h-5 text-yellow-500 mr-2" />
-                      Top 3 Recommended Courses
+                  <div className="mb-8">
+                    <h4 className="text-2xl font-bold text-gray-800 mb-5 flex items-center gap-2 pb-3 border-b-2 border-yellow-300">
+                      <Trophy className="w-7 h-7 text-yellow-500 animate-bounce" />
+                      Top 3 Perfect-Match Courses
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       {courseSuggestions.topCourses?.map((course, index) => (
-                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-green-500">
-                          <div className="flex items-center mb-2">
-                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-green-600 font-bold text-sm">{index + 1}</span>
+                        <div key={index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-t-4 border-yellow-400 relative overflow-hidden group">
+                          {/* Rank Badge */}
+                          <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-3xl opacity-80 group-hover:opacity-100 transition-opacity">
+                            #{index + 1}
+                          </div>
+                          
+                          <div className="flex items-center mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-orange-300 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                              <span className="text-white font-bold text-xl">{index + 1}</span>
                             </div>
-                            <h5 className="font-semibold text-gray-900">{course.name}</h5>
+                            <h5 className="font-bold text-gray-900 text-lg">{course.name}</h5>
                           </div>
-                          <div className="text-sm text-gray-700">
-                            <strong>Career Prospects:</strong> {course.careerProspects}
-                          </div>
+                          <p className="text-sm text-gray-700 bg-gradient-to-r from-yellow-50 to-orange-50 p-3 rounded-lg">
+                            <strong className="text-indigo-700">Career Prospects:</strong> {course.careerProspects}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -877,22 +889,22 @@ const AptitudeQuiz = () => {
                   
                   {/* Alternative Courses */}
                   <div>
-                    <h4 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
-                      <Sparkles className="w-5 h-5 text-purple-500 mr-2" />
-                      Alternative Courses to Consider
+                    <h4 className="text-2xl font-bold text-gray-800 mb-5 flex items-center gap-2 pb-3 border-b-2 border-purple-300">
+                      <Sparkles className="w-7 h-7 text-purple-500 animate-bounce" />
+                      Alternative Courses Worth Exploring
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {courseSuggestions.alternativeCourses?.map((course, index) => (
-                        <div key={index} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-purple-500">
-                          <div className="flex items-center mb-2">
-                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-purple-600 font-bold text-sm">A{index + 1}</span>
+                        <div key={index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-t-4 border-purple-400 group">
+                          <div className="flex items-center mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-300 to-pink-300 rounded-xl flex items-center justify-center mr-3 shadow-md group-hover:shadow-lg">
+                              <span className="text-white font-bold text-lg">A{index + 1}</span>
                             </div>
-                            <h5 className="font-semibold text-gray-900">{course.name}</h5>
+                            <h5 className="font-bold text-gray-900 text-lg">{course.name}</h5>
                           </div>
-                          <div className="text-sm text-gray-700">
-                            <strong>Career Prospects:</strong> {course.careerProspects}
-                          </div>
+                          <p className="text-sm text-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
+                            <strong className="text-purple-700">Career Prospects:</strong> {course.careerProspects}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -981,50 +993,99 @@ const AptitudeQuiz = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="max-w-2xl mx-auto flex min-h-[calc(100vh-4rem)] items-center px-4 py-6 sm:px-6 lg:px-8">
-          <div className="w-full rounded-[32px] bg-white shadow-2xl p-5 sm:p-7 overflow-hidden">
-            <div className="grid gap-3">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Quiz Overview</h1>
-                <p className="mt-2 text-sm text-gray-600">
-                  A short career aptitude assessment built from your profile. Review the quiz details below and then begin.
+          <div className="w-full rounded-3xl bg-white shadow-2xl p-8 overflow-hidden border-2 border-indigo-100 hover:border-indigo-300 transition-all duration-300">
+            <div className="grid gap-6">
+              {/* Header */}
+              <div className="text-center mb-2">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-lg">
+                    <BookOpen className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Aptitude Assessment</h1>
+                <p className="mt-3 text-lg text-gray-600">
+                  🎯 A personalized quiz to discover your strengths, interests & ideal career path
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Questions</div>
-                  <div className="mt-3 text-3xl font-bold text-gray-900">{questions.length}</div>
+              {/* Quick Stats */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-6 text-center transform hover:scale-105 transition-transform duration-300 hover:shadow-lg">
+                  <div className="text-xs font-bold uppercase tracking-wider text-indigo-700">📝 Total Questions</div>
+                  <div className="mt-4 text-4xl font-bold text-indigo-900">{questions.length}</div>
+                  <p className="text-sm text-indigo-600 mt-2">Multiple choice questions</p>
                 </div>
-                <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Approx. time</div>
-                  <div className="mt-3 text-3xl font-bold text-gray-900">{estimatedMinutes} min</div>
+                <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 text-center transform hover:scale-105 transition-transform duration-300 hover:shadow-lg">
+                  <div className="text-xs font-bold uppercase tracking-wider text-purple-700">⏱️ Estimated Time</div>
+                  <div className="mt-4 text-4xl font-bold text-purple-900">{estimatedMinutes} <span className="text-2xl">min</span></div>
+                  <p className="text-sm text-purple-600 mt-2">No time pressure</p>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {topics.slice(0, 4).map((topic) => (
-                  <div key={topic.category} className="rounded-3xl border border-gray-200 bg-white p-4">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{topic.label}</div>
-                    <div className="mt-2 text-2xl font-semibold text-gray-900">{topic.count}</div>
+              {/* Topics Covered */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Sparkles className="w-6 h-6 text-yellow-500" />
+                  Topics Covered
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {topics.slice(0, 4).map((topic) => (
+                    <div key={topic.category} className="rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4 transform hover:scale-105 transition-all duration-300 hover:shadow-md hover:border-indigo-300">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider text-gray-600">{topic.label}</div>
+                          <div className="mt-2 text-2xl font-bold text-gray-900">{topic.count}</div>
+                        </div>
+                        <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg">
+                          {getCategoryIcon(topic.category)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* What to Expect */}
+              <div className="rounded-2xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6">
+                <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  What to Expect
+                </h3>
+                <div className="grid gap-3 text-gray-700">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🎯</span>
+                    <div>
+                      <p className="font-semibold text-green-900">4-Option Multiple Choice</p>
+                      <p className="text-sm text-green-700">Easy to understand format</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-4">
-                <h3 className="text-base font-semibold text-indigo-900">What to expect</h3>
-                <div className="mt-3 grid gap-2 text-sm text-gray-600">
-                  <div>• 4-option multiple-choice questions</div>
-                  <div>• Suitable for your qualification and profile</div>
-                  <div>• Mix of reasoning, numbers, career preference and decision-making</div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <p className="font-semibold text-green-900">Personalized Questions</p>
+                      <p className="text-sm text-green-700">Based on your profile & qualifications</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📊</span>
+                    <div>
+                      <p className="font-semibold text-green-900">Instant Results & Suggestions</p>
+                      <p className="text-sm text-green-700">Get career recommendations right away</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Start Button */}
               <button
                 onClick={handleStartQuiz}
-                className="w-full rounded-3xl bg-indigo-600 px-5 py-4 text-base font-semibold text-white hover:bg-indigo-700 transition-colors"
+                className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-4 text-lg font-bold text-white transition-all duration-300 transform hover:scale-105 hover:shadow-2xl active:scale-95 flex items-center justify-center gap-2"
               >
-                Start Assessment
+                <Zap className="w-6 h-6" />
+                Start Assessment Now
               </button>
+              
+              <p className="text-center text-sm text-gray-500">✓ You can pause and resume later</p>
             </div>
           </div>
         </div>
@@ -1055,102 +1116,167 @@ const AptitudeQuiz = () => {
       </div>
 
       <div className="py-8">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6 transform hover:scale-[1.02] transition-transform duration-300">
-            <div className="flex items-center justify-between mb-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Quiz Header */}
+          <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6 border-2 border-indigo-100 sticky top-4 z-10">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl animate-pulse">
-                  <BookOpen className="w-8 h-8 text-white" />
+                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Aptitude Assessment</h1>
-                  <p className="text-gray-600">Discover your interests and strengths</p>
+                  <p className="text-sm text-gray-600">Question {currentQuestion + 1} of {questions.length}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                  <Clock className="w-5 h-5 text-red-500 animate-pulse" />
-                  <span className="font-medium">{formatTime(timeLeft)}</span>
-                </div>
-                <div className="text-right bg-gray-50 px-3 py-2 rounded-lg">
-                  <div className="text-sm text-gray-600">Question</div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {currentQuestion + 1}/{questions.length}
-                  </div>
+                <div className="flex flex-col items-center bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 px-4 py-3 rounded-xl">
+                  <Clock className="w-5 h-5 text-red-500 animate-pulse mb-1" />
+                  <span className="font-bold text-lg text-red-700">{formatTime(timeLeft)}</span>
+                  <span className="text-xs text-red-600 font-medium">remaining</span>
                 </div>
               </div>
             </div>
 
-            {/* Progress */}
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-8 overflow-hidden">
-              <div
-                className={`h-3 rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${getCategoryColor(currentQ.category)}`}
-                style={{ width: `${progress}%` }}
-              />
+            {/* Enhanced Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">Progress</span>
+                <span className="text-sm font-bold text-indigo-600">{Math.round(progress)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                <div
+                  className={`h-4 rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${getCategoryColor(currentQ.category)} shadow-lg`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Question Card */}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6 border-2 border-indigo-100 transform hover:scale-[1.01] transition-all duration-300">
+            {/* Category Badge */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className={`p-3 bg-gradient-to-r ${getCategoryColor(currentQ.category)} rounded-xl shadow-md`}>
+                {getCategoryIcon(currentQ.category)}
+              </div>
+              <div>
+                <span className={`inline-block px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r ${getCategoryColor(currentQ.category)}`}>
+                  {formatCategoryName(currentQ.category)}
+                </span>
+              </div>
             </div>
 
-            {/* Question */}
-            <div className={`mb-8 ${questionAnimation}`}>
-              <div className="flex items-center mb-4">
-                <div className={`p-3 bg-gradient-to-r ${getCategoryColor(currentQ.category)} rounded-xl mr-3 animate-pulse`}>
-                  {getCategoryIcon(currentQ.category)}
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900">{currentQ.question}</h2>
-              </div>
+            {/* Question Text */}
+            <h2 className={`text-3xl font-bold text-gray-900 mb-8 leading-tight ${questionAnimation}`}>
+              {currentQ.question}
+            </h2>
 
-              <div className="space-y-3">
-                {currentQ.options.map((option, index) => (
+            {/* Options */}
+            <div className="space-y-3">
+              {currentQ.options.map((option, index) => {
+                const isSelected = answers[currentQ.id]?.text === option.text;
+                const isHighlighted = selectedAnswer?.text === option.text;
+                
+                return (
                   <button
                     key={index}
                     onClick={() => handleAnswer(currentQ.id, option)}
-                    className={`w-full text-left p-4 rounded-lg border transition-all ${
-                      (answers[currentQ.id]?.text === option.text || selectedAnswer?.text === option.text)
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
-                        : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'
+                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 transform hover:scale-102 ${
+                      isSelected || isHighlighted
+                        ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg shadow-green-200'
+                        : 'border-gray-300 bg-white hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-lg'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="flex-1">{option.text}</span>
-                      {answers[currentQ.id]?.text === option.text && (
-                        <Check className="w-5 h-5 text-green-500 animate-bounce" />
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${
+                          isSelected || isHighlighted
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                            : 'bg-gray-200 text-gray-700'
+                        }`}>
+                          {String.fromCharCode(65 + index)}
+                        </div>
+                        <span className={`text-lg font-medium ${isSelected || isHighlighted ? 'text-gray-900 font-bold' : 'text-gray-700'}`}>
+                          {option.text}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <div className="animate-bounce">
+                          <Check className="w-6 h-6 text-green-600" />
+                        </div>
                       )}
                     </div>
                   </button>
-                ))}
-              </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center gap-4">
+            <button
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+              className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all duration-300 transform ${
+                currentQuestion === 0
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
+                  : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-lg hover:scale-105 active:scale-95'
+              }`}
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Previous
+            </button>
+
+            {/* Question Indicators */}
+            <div className="hidden sm:flex items-center gap-2">
+              {questions.slice(0, 5).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    idx === currentQuestion
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 w-8'
+                      : idx < currentQuestion
+                      ? 'bg-green-500'
+                      : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+              {questions.length > 5 && <span className="text-gray-500 text-sm ml-2">...</span>}
             </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between">
+            {currentQuestion === questions.length - 1 ? (
               <button
-                onClick={handlePrevious}
-                disabled={currentQuestion === 0}
-                className="flex items-center px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="flex items-center gap-2 px-6 py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Previous
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Submit Quiz
+                  </>
+                )}
               </button>
-              {currentQuestion === questions.length - 1 ? (
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="flex items-center px-4 py-2 border border-transparent rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleNext}
-                  disabled={!answers[currentQ.id]}
-                  className="flex items-center px-6 py-3 border-2 border-transparent rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                >
-                  Next
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </button>
-              )}
-            </div>
+            ) : (
+              <button
+                onClick={handleNext}
+                disabled={!answers[currentQ.id]}
+                className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold text-white transition-all duration-300 transform ${
+                  !answers[currentQ.id]
+                    ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                }`}
+              >
+                Next
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </div>

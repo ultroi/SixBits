@@ -5,15 +5,19 @@ import {
   Clock,
   Plus,
   Trash2,
-  Bell,
   CheckCircle,
   AlertTriangle,
-  Info,
   Search,
   Filter,
   ChevronDown,
   ChevronUp,
-  Sparkles
+  Sparkles,
+  GraduationCap,
+  Award,
+  Users,
+  FileText,
+  Flame,
+  TrendingUp
 } from 'lucide-react';
 
 import { toast } from 'react-toastify';
@@ -183,21 +187,34 @@ const TimelineManager = () => {
 
   const getEventTypeIcon = (type) => {
     switch (type) {
-      case 'exam': return <AlertTriangle className="w-5 h-5 text-red-500" />;
-      case 'admission': return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'scholarship': return <Bell className="w-5 h-5 text-yellow-500" />;
-      case 'counseling': return <Info className="w-5 h-5 text-blue-500" />;
-      case 'deadline': return <Clock className="w-5 h-5 text-purple-500" />;
-      default: return <Calendar className="w-5 h-5 text-gray-500" />;
+      case 'exam': return <Flame className="w-5 h-5 text-orange-500" />;
+      case 'admission': return <GraduationCap className="w-5 h-5 text-blue-500" />;
+      case 'scholarship': return <Award className="w-5 h-5 text-yellow-500" />;
+      case 'counseling': return <Users className="w-5 h-5 text-emerald-500" />;
+      case 'deadline': return <Clock className="w-5 h-5 text-red-500" />;
+      default: return <FileText className="w-5 h-5 text-indigo-500" />;
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'border-red-200 bg-red-50';
-      case 'medium': return 'border-yellow-200 bg-yellow-50';
-      case 'low': return 'border-green-200 bg-green-50';
-      default: return 'border-gray-200 bg-gray-50';
+  const getEventTypeColor = (type) => {
+    switch (type) {
+      case 'exam': return 'from-orange-50 to-red-50 border-orange-200';
+      case 'admission': return 'from-blue-50 to-cyan-50 border-blue-200';
+      case 'scholarship': return 'from-yellow-50 to-amber-50 border-yellow-200';
+      case 'counseling': return 'from-emerald-50 to-teal-50 border-emerald-200';
+      case 'deadline': return 'from-red-50 to-pink-50 border-red-200';
+      default: return 'from-indigo-50 to-purple-50 border-indigo-200';
+    }
+  };
+
+  const getEventTypeBadgeColor = (type) => {
+    switch (type) {
+      case 'exam': return 'bg-orange-100 text-orange-700';
+      case 'admission': return 'bg-blue-100 text-blue-700';
+      case 'scholarship': return 'bg-yellow-100 text-yellow-700';
+      case 'counseling': return 'bg-emerald-100 text-emerald-700';
+      case 'deadline': return 'bg-red-100 text-red-700';
+      default: return 'bg-indigo-100 text-indigo-700';
     }
   };
 
@@ -214,41 +231,41 @@ const TimelineManager = () => {
   const pastEvents = filteredEvents.filter(event => event.isCompleted || getDaysUntil(event.date) < 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
+      <header className="bg-white/80 backdrop-blur-xl shadow-xl border-b-2 border-indigo-200/30 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
+                className="flex items-center space-x-2 hover:scale-105 transition-transform duration-200 p-2 rounded-xl hover:bg-indigo-100"
               >
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
-                  <Sparkles className="w-6 h-6 text-white animate-pulse" />
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+                  <Sparkles className="w-7 h-7 text-white" />
                 </div>
-                <span className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">Zariya</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zariya</span>
               </button>
-              <div className="hidden md:block h-8 w-px bg-gray-300"></div>
-              <h1 className="text-3xl font-bold text-gray-900 hover:text-indigo-700 transition-colors cursor-pointer">
+              <div className="hidden md:block h-8 w-px bg-indigo-300"></div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Timeline Manager
               </h1>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="flex items-center space-x-3">
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-indigo-400 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search events..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="pl-12 pr-5 py-2.5 border-2 border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all bg-indigo-50/50 focus:bg-white"
                 />
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex items-center px-4 py-2.5 bg-gradient-to-r from-blue-100 to-indigo-100 hover:from-blue-200 hover:to-indigo-200 rounded-xl transition-all font-medium text-gray-700"
               >
                 <Filter className="w-5 h-5 mr-2" />
                 Filters
@@ -256,7 +273,7 @@ const TimelineManager = () => {
               </button>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2.5 rounded-xl flex items-center font-bold transition-all shadow-lg hover:shadow-xl"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add Event
@@ -318,86 +335,111 @@ const TimelineManager = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
                 <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Events</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-indigo-600" />
+                    Upcoming Events
+                  </h2>
                   <div className="space-y-4">
-                    {upcomingEvents.map(event => {
+                    {upcomingEvents.map((event, idx) => {
                       const daysUntil = getDaysUntil(event.date);
+                      const isUrgent = daysUntil <= 3;
+                      const isWarning = daysUntil <= 7;
                       return (
                         <div
                           key={event._id || event.id}
-                          className={`border-l-4 rounded-r-lg p-4 ${getPriorityColor(event.priority)} cursor-pointer hover:shadow-md transition-shadow`}
+                          className={`group bg-gradient-to-r ${getEventTypeColor(event.type)} border-2 rounded-xl p-5 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden`}
                           onClick={() => setSelectedEvent(event)}
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start space-x-3">
-                              {getEventTypeIcon(event.type)}
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(event.priority)}`}>{event.priority}</span>
+                          {/* Animated gradient background */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-10 bg-gradient-to-r from-indigo-400 to-purple-400 transition-opacity duration-300"></div>
+                          
+                          <div className="relative z-10 flex items-start justify-between">
+                            <div className="flex items-start space-x-4 flex-1">
+                              <div className={`p-3 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm group-hover:shadow-md transition-all duration-300`}>
+                                {getEventTypeIcon(event.type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-3 mb-2 flex-wrap gap-2">
+                                  <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-700 transition-colors">{event.title}</h3>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityBadge(event.priority)} whitespace-nowrap`}>{event.priority}</span>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getEventTypeBadgeColor(event.type)} whitespace-nowrap capitalize`}>{event.type}</span>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-                                <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                  <div className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-1" />
-                                    {formatDate(event.date)}
+                                <p className="text-sm text-gray-700 mb-3 line-clamp-2 group-hover:text-gray-800">{event.description}</p>
+                                <div className="flex items-center space-x-6 text-sm flex-wrap gap-2">
+                                  <div className="flex items-center text-gray-600 group-hover:text-gray-900">
+                                    <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+                                    <span className="font-medium">{formatDate(event.date)}</span>
                                   </div>
-                                  <div className={`flex items-center ${daysUntil <= 3 ? 'text-red-600 font-medium' : daysUntil <= 7 ? 'text-yellow-600 font-medium' : ''}`}>
-                                    <Clock className="w-4 h-4 mr-1" />
-                                    {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `${daysUntil} days left`}
+                                  <div className={`flex items-center font-bold whitespace-nowrap ${isUrgent ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-green-600'}`}>
+                                    <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+                                    {daysUntil === 0 ? '🔥 Today!' : daysUntil === 1 ? '⚡ Tomorrow' : `${daysUntil} days left`}
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleToggleComplete(event._id || event.id);
                                 }}
-                                className={`p-1 rounded ${event.isCompleted ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                className={`p-2 rounded-lg transition-all duration-300 ${event.isCompleted ? 'bg-green-100 text-green-600 shadow-md' : 'bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600'}`}
+                                title={event.isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
                               >
-                                <CheckCircle className="w-4 h-4" />
+                                <CheckCircle className="w-5 h-5" />
                               </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDeleteEvent(event._id || event.id);
                                 }}
-                                className="p-1 rounded bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-600"
+                                className="p-2 rounded-lg bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-600 transition-all duration-300"
+                                title="Delete event"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-5 h-5" />
                               </button>
                             </div>
                           </div>
                         </div>
                       );
                     })}
+                    {upcomingEvents.length === 0 && (
+                      <div className="text-center py-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
+                        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600 font-medium">No upcoming events</p>
+                        <p className="text-gray-500 text-sm mt-1">Add one to get started!</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {pastEvents.length > 0 && (
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Past Events</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      Past Events
+                    </h2>
                     <div className="space-y-4">
                       {pastEvents.map(event => (
                         <div
                           key={event._id || event.id}
-                          className="border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-pointer hover:shadow-md transition-shadow"
+                          className="bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-5 cursor-pointer hover:shadow-lg hover:border-gray-400 transition-all duration-300 hover:-translate-y-1 relative group"
                           onClick={() => setSelectedEvent(event)}
                         >
                           <div className="flex items-start justify-between">
-                            <div className="flex items-start space-x-3">
-                              {getEventTypeIcon(event.type)}
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h3 className="font-semibold text-gray-700">{event.title}</h3>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(event.priority)}`}>{event.priority}</span>
-                                  {event.isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
+                            <div className="flex items-start space-x-4 flex-1">
+                              <div className="p-3 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm group-hover:shadow-md transition-all duration-300 opacity-60">
+                                {getEventTypeIcon(event.type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-3 mb-2 flex-wrap gap-2">
+                                  <h3 className="font-bold text-gray-700 group-hover:text-gray-900 line-through opacity-75">{event.title}</h3>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityBadge(event.priority)}`}>{event.priority}</span>
+                                  {event.isCompleted && <CheckCircle className="w-4 h-4 text-green-600" />}
                                 </div>
-                                <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <Calendar className="w-4 h-4 mr-1" />
+                                <p className="text-sm text-gray-600 mb-3 opacity-75">{event.description}</p>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Calendar className="w-4 h-4 mr-2" />
                                   {formatDate(event.date)}
                                 </div>
                               </div>
@@ -407,9 +449,9 @@ const TimelineManager = () => {
                                 e.stopPropagation();
                                 handleDeleteEvent(event._id || event.id);
                               }}
-                              className="p-1 rounded bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-600"
+                              className="p-2 rounded-lg bg-gray-200 text-gray-500 hover:bg-red-100 hover:text-red-600 transition-all duration-300 flex-shrink-0 ml-4"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </div>
                         </div>
@@ -421,145 +463,166 @@ const TimelineManager = () => {
 
               <div className="lg:col-span-1">
                 {selectedEvent ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Event Details</h3>
-                      <button onClick={() => setSelectedEvent(null)} className="text-gray-400 hover:text-gray-600">×</button>
+                  <div className="bg-gradient-to-br from-white to-indigo-50/30 rounded-2xl shadow-2xl border-2 border-indigo-200/50 p-6 sticky top-6 hover:shadow-3xl transition-all duration-300">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Event Details</h3>
+                      <button onClick={() => setSelectedEvent(null)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg">
+                        <span className="text-2xl font-bold">×</span>
+                      </button>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        {getEventTypeIcon(selectedEvent.type)}
-                        <div>
-                          <h4 className="font-medium text-gray-900">{selectedEvent.title}</h4>
-                          <p className="text-sm text-gray-600 capitalize">{selectedEvent.type}</p>
+                    <div className="space-y-5">
+                      <div className="bg-white rounded-xl p-4 border-2 border-indigo-100/50">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100">
+                            {getEventTypeIcon(selectedEvent.type)}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-lg">{selectedEvent.title}</h4>
+                            <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wide">{selectedEvent.type}</p>
+                          </div>
                         </div>
                       </div>
 
-                      <div>
-                        <p className="text-sm text-gray-700">{selectedEvent.description}</p>
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100">
+                        <p className="text-gray-700 leading-relaxed">{selectedEvent.description}</p>
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {formatDate(selectedEvent.date)}
+                      <div className="space-y-3 bg-white rounded-xl p-4 border-2 border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-indigo-600" />
+                            Date
+                          </span>
+                          <span className="text-gray-900 font-bold">{formatDate(selectedEvent.date)}</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="w-4 h-4 mr-2" />
-                          {getDaysUntil(selectedEvent.date) >= 0 ? `${getDaysUntil(selectedEvent.date)} days remaining` : `${Math.abs(getDaysUntil(selectedEvent.date))} days ago`}
+                        <div className="border-t border-gray-100"></div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-blue-600" />
+                            Time Left
+                          </span>
+                          <span className={`font-bold ${getDaysUntil(selectedEvent.date) <= 3 ? 'text-red-600' : getDaysUntil(selectedEvent.date) <= 7 ? 'text-yellow-600' : 'text-green-600'}`}>
+                            {getDaysUntil(selectedEvent.date) >= 0 ? `${getDaysUntil(selectedEvent.date)} days` : `${Math.abs(getDaysUntil(selectedEvent.date))} days ago`}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Priority:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(selectedEvent.priority)}`}>{selectedEvent.priority}</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-3 border-2 border-purple-100">
+                          <p className="text-xs text-gray-600 font-medium mb-1">Priority</p>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getPriorityBadge(selectedEvent.priority)}`}>{selectedEvent.priority.toUpperCase()}</span>
+                        </div>
+                        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 border-2 border-blue-100">
+                          <p className="text-xs text-gray-600 font-medium mb-1">Status</p>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${selectedEvent.isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {selectedEvent.isCompleted ? '✓ Done' : 'Pending'}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Status:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedEvent.isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                          {selectedEvent.isCompleted ? 'Completed' : 'Pending'}
-                        </span>
-                      </div>
-
-                      <div className="pt-4 border-t border-gray-200">
-                        <div className="flex space-x-2">
+                      <div className="pt-4 border-t-2 border-gray-200">
+                        <div className="flex space-x-3">
                           <button
                             onClick={() => handleToggleComplete(selectedEvent._id || selectedEvent.id)}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${selectedEvent.isCompleted ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                            className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 ${selectedEvent.isCompleted ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-500/30'}`}
                           >
-                            {selectedEvent.isCompleted ? 'Mark Pending' : 'Mark Complete'}
+                            {selectedEvent.isCompleted ? '↺ Mark Pending' : '✓ Mark Complete'}
                           </button>
                           <button
                             onClick={() => handleDeleteEvent(selectedEvent._id || selectedEvent.id)}
-                            className="p-2 bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 rounded-lg"
+                            className="px-4 py-3 bg-gradient-to-r from-red-100 to-pink-100 text-red-600 hover:from-red-200 hover:to-pink-200 rounded-xl font-bold transition-all duration-300"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : showAddForm ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Add New Event</h3>
-                      <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">×</button>
+                  <div className="bg-gradient-to-br from-white to-indigo-50/30 rounded-2xl shadow-2xl border-2 border-indigo-200/50 p-6 sticky top-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
+                        <Plus className="w-6 h-6 text-indigo-600" />
+                        Add New Event
+                      </h3>
+                      <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg">
+                        <span className="text-2xl font-bold">×</span>
+                      </button>
                     </div>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">Event Title</label>
                         <input
                           type="text"
                           value={newEvent.title}
                           onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          placeholder="Event title"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all"
+                          placeholder="e.g., JEE Exam"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">Description</label>
                         <textarea
                           value={newEvent.description}
                           onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all"
                           rows="3"
-                          placeholder="Event description"
+                          placeholder="Add any important details..."
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">Event Type</label>
                         <select
                           value={newEvent.type}
                           onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all"
                         >
-                          <option value="admission">Admission</option>
-                          <option value="exam">Exam</option>
-                          <option value="scholarship">Scholarship</option>
-                          <option value="counseling">Counseling</option>
-                          <option value="deadline">Deadline</option>
+                          <option value="admission">📚 Admission</option>
+                          <option value="exam">🔥 Exam</option>
+                          <option value="scholarship">🏆 Scholarship</option>
+                          <option value="counseling">👥 Counseling</option>
+                          <option value="deadline">⏰ Deadline</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">Date</label>
                         <input
                           type="date"
                           value={newEvent.date}
                           onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">Priority Level</label>
                         <select
                           value={newEvent.priority}
                           onChange={(e) => setNewEvent(prev => ({ ...prev, priority: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all"
                         >
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
+                          <option value="low">🟢 Low Priority</option>
+                          <option value="medium">🟡 Medium Priority</option>
+                          <option value="high">🔴 High Priority</option>
                         </select>
                       </div>
 
-                      <div className="flex space-x-2 pt-4">
+                      <div className="flex space-x-3 pt-2">
                         <button
                           onClick={handleAddEvent}
                           disabled={submitting}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                          className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-400 disabled:to-purple-400 text-white py-3 px-4 rounded-xl font-bold transition-all disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                         >
-                          {submitting ? 'Creating...' : 'Add Event'}
+                          {submitting ? '⏳ Creating...' : '✨ Add Event'}
                         </button>
                         <button
                           onClick={() => setShowAddForm(false)}
-                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                          className="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-all"
                         >
                           Cancel
                         </button>
@@ -567,10 +630,11 @@ const TimelineManager = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 rounded-xl p-8 text-center">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Event</h3>
-                    <p className="text-gray-600">Click on any event to view details and manage it.</p>
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 text-center border-2 border-dashed border-indigo-300 hover:border-indigo-400 transition-all sticky top-6">
+                    <Calendar className="w-16 h-16 text-indigo-400 mx-auto mb-4 opacity-60" />
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Select an Event</h3>
+                    <p className="text-gray-600 text-sm">Click on any event from the list to view details and manage it.</p>
+                    <p className="text-gray-500 text-xs mt-4 font-medium">📌 Or create a new event to get started</p>
                   </div>
                 )}
               </div>
